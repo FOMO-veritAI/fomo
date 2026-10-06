@@ -1,0 +1,41 @@
+<article class="news-card" [id]="'news-' + article.id">
+  <div class="card-publisher">
+    <span class="publisher-logo" [class]="'publisher-logo ' + (article.logo || '')">{{ article.mark }}</span>
+    <div class="publisher-details">
+      <span class="publisher-name">{{ article.publisher }} <app-icon name="verified" className="verified-icon" /></span>
+      <span class="publisher-meta">{{ article.time }} · {{ article.topic }}</span>
+    </div>
+    @if (rank) { <span class="rank-pill"><app-icon name="fire" /> Em alta</span> }
+    <button class="more-button icon-button" (click)="more.emit(article.id)" aria-label="Opções da notícia"><app-icon name="more" /></button>
+  </div>
+
+  @if (article.image) {
+    <div class="card-photo-wrap">
+      <img class="card-photo" [src]="article.image" [alt]="article.id === 1 ? 'Vista aérea de um grande parque arborizado cercado por edifícios' : 'Painéis solares em uma área aberta sob o céu azul'" />
+      <span class="photo-category">{{ article.category }}</span>
+      <span class="photo-credit">Imagem ilustrativa</span>
+    </div>
+  } @else {
+    <div class="text-category">{{ article.category }}</div>
+  }
+
+  <div class="card-content">
+    <button class="headline-button" (click)="openArticle.emit(article.id)"><h2>{{ article.title }}</h2></button>
+    <p class="card-summary">{{ article.summary }}</p>
+    <app-audio-player [article]="article" [compact]="true" [playing]="audioPlaying" (togglePlay)="toggleAudio.emit($event)" (showInfo)="audioInfo.emit($event)" (playExpert)="expertAudio.emit($event)" />
+    <div class="evidence-strip">
+      <span class="evidence-state"><app-icon name="shield" /> Exemplo visual da <b>FOP</b><span class="dot-separator">·</span><span class="evidence-detail">fontes fictícias</span></span>
+      <button class="evidence-link" (click)="openEvidence.emit(article.id)">Ver evidências <app-icon name="chevron" /></button>
+    </div>
+    <div class="card-actions">
+      <button class="card-action" [class.selected]="liked" (click)="toggleLike.emit(article.id)" aria-label="Curtir notícia" [attr.aria-pressed]="liked"><app-icon name="heart" /> <span>{{ article.likes + (liked ? 1 : 0) }}</span></button>
+      <button class="card-action" (click)="openComments.emit(article.id)" aria-label="Ver comentários"><app-icon name="comment" /> <span>{{ article.comments + addedComments }}</span></button>
+      <button class="card-action" (click)="share.emit(article.id)" aria-label="Compartilhar notícia"><app-icon name="share" /> <span>{{ article.shares }}</span></button>
+      <button class="card-action" [class.selected]="saved" (click)="toggleSave.emit(article.id)" [attr.aria-label]="saved ? 'Remover dos salvos' : 'Salvar notícia'" [attr.aria-pressed]="saved"><app-icon name="bookmark" /></button>
+    </div>
+  </div>
+  <div class="mini-discussion">
+    <div class="discussion-caption"><div class="avatar-stack"><span class="avatar" style="background:#e5cdb5">MC</span><span class="avatar" style="background:#cbd5b9">RL</span><span class="avatar" style="background:#e3d4da">LM</span></div><span><strong>{{ article.voices }} olhares</strong> sobre esta notícia</span></div>
+    <button class="discussion-button" (click)="viewReactions.emit(article.id)">Ver reactions <app-icon name="arrow" /></button>
+  </div>
+</article>

@@ -1,0 +1,48 @@
+.publisher-console { margin: 22px 0 60px; color: #40543f; }
+.console-intro { border-radius: 13px; padding: 28px; background: #eaf3e2; }
+.console-intro h2 { font: 500 32px/1.1 var(--serif); margin: 9px 0; }
+.console-intro p { font-size: 14px; line-height: 1.6; color: #657761; }
+.console-tabs { display: flex; gap: 8px; margin: 22px 0; border-bottom: 1px solid #dae5d4; }
+.console-tabs button { padding: 10px 17px; font-weight: 650; color: #70836b; }
+.console-tabs button.active { color: #154e42; border-bottom: 2px solid #154e42; }
+.console-key, .console-row { display: flex; align-items: flex-end; gap: 12px; }
+.console-key { margin-bottom: 20px; }
+.console-key label, .console-row label { flex: 1; }
+.console-form, .console-detail, .review-card, .console-list { background: #fff; border: 1px solid #dfe8d9; border-radius: 11px; padding: 22px; margin: 20px 0; }
+.console-form h3, .console-list h3, .console-detail h3, .review-card h3 { font: 700 18px var(--heading); margin: 0 0 17px; }
+.publisher-console label { display: block; font-size: 12px; font-weight: 700; color: #5e735a; margin: 0 0 14px; }
+.publisher-console label small { font-weight: 400; color: #899884; }
+.publisher-console input, .publisher-console textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; border: 1px solid #d9e5d3; border-radius: 7px; padding: 11px 12px; font: 400 13px var(--body); color: #40543f; background: #fcfdfb; }
+.publisher-console input:focus, .publisher-console textarea:focus { outline: 2px solid #a9c598; }
+.publisher-console .button-primary, .publisher-console .button-secondary { white-space: nowrap; }
+.publisher-console button:disabled { opacity: .5; cursor: not-allowed; }
+.console-alert { border-radius: 7px; padding: 11px 13px; margin: 14px 0; font-size: 13px; }
+.console-alert.error { background: #fff0ed; color: #a5473e; }
+.console-alert.success { background: #edf6e9; color: #3f7149; }
+.console-list-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left; padding: 12px 0; border-top: 1px solid #edf0e9; }
+.console-list-item strong, .console-list-item small { display: block; }
+.console-list-item strong { font-size: 13px; color: #40543f; }
+.console-list-item small { margin-top: 4px; color: #8d9b87; }
+.console-status { display: inline-block; border-radius: 5px; background: #edf2e8; color: #5b7853; padding: 5px 8px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.console-status.needs_evidence, .console-status.awaiting_review { background: #fff5df; color: #9a6b26; }
+.console-status.blocked, .console-status.rejected, .console-status.error { background: #fff0ed; color: #b44d44; }
+.console-status.published { background: #e4f3e4; color: #347146; }
+.console-detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.console-detail-head h3 { margin-top: 6px; }
+.console-detail h4 { margin: 18px 0 8px; }
+.console-attachments { border: 1px solid #dfebd8; border-radius: 8px; background: #f7faf4; padding: 16px; margin: 12px 0; }
+.console-attachments p, .console-note, .console-review-note { font-size: 12px; line-height: 1.5; color: #75846f; }
+.console-claim { border-left: 3px solid #e7b768; background: #fcfaf5; padding: 13px; margin: 9px 0; border-radius: 4px; }
+.console-claim.supported { border-color: #69a76c; background: #f4faf2; }
+.console-claim.refuted { border-color: #cf6b61; background: #fff5f3; }
+.console-claim.conflicting_evidence { border-color: #ce9062; }
+.console-claim strong, .review-claim strong { font-size: 13px; }
+.console-claim p { font-size: 13px; line-height: 1.5; margin: 7px 0; }
+.console-claim small { color: #84947c; }
+.console-source { margin: 12px 0 0; border-top: 1px solid #dfebd8; padding-top: 9px; font-size: 12px; }
+.console-source a, .review-claim a { color: #236d5a; text-decoration: underline; }
+.review-card > p { color: #718268; font-size: 13px; line-height: 1.5; }
+.review-claim { margin: 10px 0; padding: 11px; border-radius: 5px; background: #f7f9f4; }
+.review-claim span, .review-claim small { display: block; margin-top: 5px; font-size: 12px; }
+.review-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 680px) { .console-key, .console-row { display: block; } .console-detail-head { display: block; } .console-list-item { align-items: flex-start; flex-direction: column; } .publisher-console .button-primary, .publisher-console .button-secondary { width: 100%; justify-content: center; margin-bottom: 7px; } }

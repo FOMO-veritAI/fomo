@@ -1,0 +1,47 @@
+<section class="publisher-console">
+  <div class="console-intro"><div class="eyebrow">PUBLICAÇÃO COM EVIDÊNCIAS</div><h2>Envie uma notícia para a FOP.</h2><p>Cada afirmação factual será analisada separadamente. A publicação só aparece no feed depois da revisão.</p></div>
+  <div class="console-tabs"><button [class.active]="tab === 'publisher'" (click)="tab = 'publisher'">Publisher</button><button [class.active]="tab === 'reviewer'" (click)="tab = 'reviewer'">Revisão</button></div>
+  @if (error) { <p class="console-alert error" role="alert">{{ error }}</p> }
+  @if (message) { <p class="console-alert success" role="status">{{ message }}</p> }
+
+  @if (tab === 'publisher') {
+    <div class="console-key"><label>Chave local do publisher<input type="password" [(ngModel)]="publisherKey" autocomplete="off" placeholder="TAKTA_PUBLISHER_KEY" /></label><button class="button-secondary" (click)="loadPublisher()" [disabled]="busy || !publisherKey">Ver meus envios</button></div>
+    <form class="console-form" (ngSubmit)="create()">
+      <h3>Nova notícia</h3>
+      <div class="console-row"><label>Nome do veículo<input name="publisher" [(ngModel)]="publisher" required minlength="2" placeholder="Ex.: Jornal Horizonte" /></label><label>Assunto<input name="topic" [(ngModel)]="topic" required placeholder="Ex.: Sociedade" /></label></div>
+      <label>Título<input name="title" [(ngModel)]="title" required minlength="12" placeholder="Título da notícia" /></label>
+      <label>Resumo<textarea name="summary" [(ngModel)]="summary" required minlength="20" rows="3" placeholder="O que aconteceu?" ></textarea></label>
+      <label>Texto da notícia<textarea name="body" [(ngModel)]="body" required minlength="30" rows="7" placeholder="Texto completo para publicação"></textarea></label>
+      <label>Afirmações a verificar <small>Uma por linha, até oito.</small><textarea name="claims" [(ngModel)]="claims" required rows="4" placeholder="O projeto prevê três parques.&#10;A obra começa em outubro."></textarea></label>
+      <button class="button-primary" type="submit" [disabled]="busy || !publisherKey"><app-icon name="document" /> Criar rascunho</button>
+    </form>
+    @if (articles.length) {
+      <div class="console-list"><h3>Envios</h3>@for (article of articles; track article.id) { <button class="console-list-item" (click)="select(article)"><span><strong>{{ article.title }}</strong><small>{{ article.publisher }} · {{ article.created_at.slice(0, 10) }}</small></span><span class="console-status" [class]="'console-status ' + article.status.toLowerCase()">{{ statusLabel(article.status) }}</span></button> }</div>
+    }
+    @if (current; as article) {
+      <section class="console-detail"><div class="console-detail-head"><div><div class="eyebrow">NOTÍCIA #{{ article.id }}</div><h3>{{ article.title }}</h3></div><span class="console-status" [class]="'console-status ' + article.status.toLowerCase()">{{ statusLabel(article.status) }}</span></div>
+        @if (article.status === 'DRAFT' || article.status === 'NEEDS_EVIDENCE' || article.status === 'BLOCKED' || article.status === 'ERROR' || article.status === 'REJECTED') {
+          <div class="console-attachments"><h4>Acrescentar comprovação</h4><p>Envie uma página pública ou um documento. Imagens são guardadas para revisão humana.</p><div class="console-row"><label>Link da fonte<input type="url" [(ngModel)]="evidenceUrl" placeholder="https://..." /></label><button class="button-secondary" (click)="addUrl()" [disabled]="busy || !evidenceUrl">Adicionar link</button></div><div class="console-row"><label>Documento ou imagem (até 5 MB)<input type="file" accept=".txt,.pdf,.png,.jpg,.jpeg" (change)="chooseFile($event)" /></label><button class="button-secondary" (click)="addFile()" [disabled]="busy || !file">Anexar arquivo</button></div></div>
+          <button class="button-primary" (click)="verify()" [disabled]="busy"><app-icon name="shield" /> Enviar para análise FOP</button>
+        }
+        @if (article.review_note) { <p class="console-review-note"><strong>Revisor:</strong> {{ article.review_note }}</p> }
+        @if (article.attachments.length) { <h4>Fontes enviadas</h4><ul>@for (attachment of article.attachments; track attachment.id) { <li>{{ attachment.source_title }} · {{ attachment.origin === 'manual_attachment' ? 'revisão humana' : 'texto extraído' }}</li> }</ul> }
+        <div class="console-claim-list"><h4>Resultado da verificação FOP</h4>@for (claim of article.claims; track claim.id) { <article class="console-claim" [class]="'console-claim ' + claim.verdict.toLowerCase()"><strong>{{ claim.text }}</strong><p>{{ claim.explanation || 'Aguardando análise.' }}</p><small>Confiança da relação textual: {{ claim.confidence }}</small>@for (source of claim.evidence; track source.id) { <div class="console-source"><span>{{ source.source_title }} · {{ source.origin }}</span><p>“{{ source.excerpt }}”</p>@if (source.source_url) { <a [href]="source.source_url" target="_blank" rel="noopener noreferrer">Abrir fonte</a> }</div> }</article> }</div>
+        @if (article.search_errors.length) { <p class="console-note">Limitações da busca: {{ article.search_errors.join(' · ') }}</p> }
+      </section>
+    }
+  }
+
+  @if (tab === 'reviewer') {
+    <div class="console-key"><label>Chave local do revisor<input type="password" [(ngModel)]="reviewerKey" autocomplete="off" placeholder="TAKTA_REVIEWER_KEY" /></label><button class="button-secondary" (click)="loadReview()" [disabled]="busy || !reviewerKey">Carregar fila</button></div>
+    @if (!queue.length) { <p class="console-note">A fila aparecerá aqui após informar a chave e carregar as notícias.</p> }
+    @for (article of queue; track article.id) {
+      <article class="review-card"><div class="console-detail-head"><div><small>{{ article.publisher }} · #{{ article.id }}</small><h3>{{ article.title }}</h3></div><span class="console-status" [class]="'console-status ' + article.status.toLowerCase()">{{ statusLabel(article.status) }}</span></div><p>{{ article.summary }}</p>
+        @for (claim of article.claims; track claim.id) { <div class="review-claim" [class]="claim.verdict.toLowerCase()"><strong>{{ claim.text }}</strong><span>{{ claim.explanation }}</span>@for (source of claim.evidence; track source.id) { <small>{{ source.source_title }} · {{ relationLabel(source.relation) }} · {{ source.source_domain }}</small>@if (source.source_url) { <a [href]="source.source_url" target="_blank" rel="noopener noreferrer">Abrir fonte</a> } }</div> }
+        @if (article.attachments.length) { <div class="review-attachments"><strong>{{ article.attachments.length }} anexo(s) do publisher</strong>@for (attachment of article.attachments; track attachment.id) { <div>{{ attachment.source_title }} · {{ attachment.origin }} @if (attachment.file_type) { <button (click)="downloadAttachment(attachment)">Baixar para revisar</button> }</div> }</div> }
+        <label>Justificativa da decisão<textarea [(ngModel)]="reviewNote" rows="2" minlength="8" placeholder="Explique a decisão para o publisher"></textarea></label>
+        <div class="review-actions"><button class="button-primary" (click)="decide(article, 'approve')" [disabled]="busy || reviewNote.trim().length < 8 || (article.status !== 'AWAITING_REVIEW' && !(article.status === 'NEEDS_EVIDENCE' && hasReviewableAttachment(article)))">Aprovar e publicar</button><button class="button-secondary" (click)="decide(article, 'request_evidence')" [disabled]="busy || reviewNote.trim().length < 8">Pedir comprovação</button><button class="button-secondary" (click)="decide(article, 'reject')" [disabled]="busy || reviewNote.trim().length < 8">Devolver</button></div>
+      </article>
+    }
+  }
+</section>

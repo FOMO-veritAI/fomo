@@ -1,0 +1,45 @@
+:host { display: contents; }
+
+.message-panel {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 14px;
+  align-items: start;
+  color: #66765f;
+  line-height: 1.65;
+  padding: 20px 0;
+}
+
+.message-panel > app-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #eef5e9;
+  color: #5d8152;
+}
+
+.message-panel app-icon svg { width: 18px; height: 18px; }
+
+.publisher-shortcut { color: #547653; }
+.live-heading { margin-top: 25px; }
+.live-news-card { border-color: #aacb9c; }
+.live-news-card.conflicting_evidence { border-color: #d29161; }
+.live-news-card.not_enough_evidence { border-color: #dcae61; }
+.live-news-card.refuted { border-color: #cf675d; }
+.live-news-card .card-content { padding-bottom: 14px; }
+.live-result { margin: 10px 0 0; color: #3c7044; font-weight: 650; line-height: 1.45; }
+.conflicting_evidence .live-result, .live-result.conflicting_evidence { color: #94623e; }
+.not_enough_evidence .live-result, .live-result.not_enough_evidence { color: #966e2e; }
+.refuted .live-result, .live-result.refuted { color: #aa4b43; }
+.live-body { white-space: pre-wrap; line-height: 1.7; color: #657462; }
+.live-claim { margin: 13px 0; padding: 16px; background: #fffaf0; border-left: 4px solid #dcae61; border-radius: 6px; }
+.live-claim.supported { background: #f2faef; border-color: #6ea870; }
+.live-claim.refuted { background: #fff3f1; border-color: #cf675d; }
+.live-claim.conflicting_evidence { background: #fff6eb; border-color: #d29161; }
+.live-claim strong { display: block; color: #435943; }
+.live-claim p { line-height: 1.55; margin: 8px 0; }
+.live-claim small { color: #84947c; }
+.live-claim .source-card { margin-top: 12px; }
+.live-claim .source-card a { color: #236d5a; text-decoration: underline; }

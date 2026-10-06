@@ -1,0 +1,291 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <button class="brand" (click)="navigate('news')" aria-label="TAKTA, início">takta<span class="brand-dot"></span></button>
+    <p class="brand-tagline">Fatos conectam. Conversas movem.</p>
+    <nav class="navigation" aria-label="Menu principal">
+      @for (item of nav; track item.id; let index = $index) {
+        @if (index === 3) { <div class="nav-divider"></div><div class="nav-label">SEU ESPAÇO</div> }
+        <button class="nav-item" [class.active]="view === item.id" (click)="navigate(item.id)" [attr.aria-current]="view === item.id ? 'page' : null">
+          <app-icon [name]="item.icon" /><span>{{ item.label }}</span>
+          @if (item.id === 'saved' && saved.size) { <span class="nav-count">{{ saved.size }}</span> }
+        </button>
+      }
+      <div class="nav-divider"></div><button class="nav-item" [class.active]="view === 'publisher'" (click)="navigate('publisher')"><app-icon name="building" /><span>Publicar notícia</span></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-manifest"><app-icon name="spark" className="little-spark" /><p>Fatos primeiro.<br><em>Sua visão depois.</em></p></div>
+      <div class="sidebar-foot">Uma conversa com base. <b>FOP</b><app-icon name="shield" className="verified-icon" /></div>
+    </div>
+  </aside>
+
+  <div class="workspace">
+    <header class="topbar">
+      <div class="topbar-title"><span class="desktop-title">{{ currentNavLabel }}</span><span class="mobile-brand">takta</span><span class="topbar-divider"></span><span class="topbar-note">Seu olhar faz parte.</span></div>
+      <div class="header-tools">
+        <label class="search-wrap"><app-icon name="search" /><input #globalSearch type="search" placeholder="O que você quer explorar?" aria-label="Buscar notícias" [(ngModel)]="query" (focus)="view = 'news'" /><kbd>/</kbd></label>
+        <button class="icon-button publisher-shortcut" (click)="navigate('publisher')" aria-label="Área do publisher"><app-icon name="building" /></button>
+        <button class="icon-button" (click)="openMessage('Notificações', 'Você está em dia. As notificações desta versão são demonstrativas.')" aria-label="Notificações"><app-icon name="bell" /><span class="notification-dot"></span></button>
+        <button class="icon-button" (click)="navigate('profile')" aria-label="Meu perfil"><span class="avatar me">CH</span></button>
+      </div>
+    </header>
+
+    <div class="content-grid">
+      <main class="main-column" id="main-content">
+        <section class="greeting">
+          <div class="greeting-meta"><app-icon name="sun" /> TERÇA-FEIRA, 22 DE SETEMBRO</div>
+          <h1>{{ greeting[0] }}<br><span>{{ greeting[1] }}</span></h1>
+          <p>{{ greeting[2] }}</p>
+          @if (view !== 'publisher') { <div class="mobile-demo">Protótipo visual · conteúdo fictício</div> }
+        </section>
+
+        @if (view === 'news') {
+          @if (publicArticles.length) {
+            <div class="view-section-label live-heading">Notícias publicadas <span>Análise FOP e revisão humana</span></div>
+            @for (article of publicArticles; track article.id) {
+              <article class="news-card live-news-card" [class]="'news-card live-news-card ' + articleVerdict(article)"><div class="card-publisher"><span class="publisher-logo">{{ article.publisher.slice(0, 1).toUpperCase() }}</span><div class="publisher-details"><span class="publisher-name">{{ article.publisher }}</span><span class="publisher-meta">{{ article.created_at.slice(0, 10) }} · {{ article.topic }}</span></div></div><div class="card-content"><button class="headline-button" (click)="openLiveEvidence(article)"><h2>{{ article.title }}</h2></button><p class="card-summary">{{ article.summary }}</p><div class="evidence-strip"><span class="evidence-state"><app-icon name="shield" /> Resultado da verificação <b>FOP</b><span class="dot-separator">·</span><span class="evidence-detail">{{ article.claims.length }} afirmações</span></span><button class="evidence-link" (click)="openLiveEvidence(article)">Ver análise <app-icon name="chevron" /></button></div><p class="live-result">{{ articleResult(article) }}</p></div></article>
+            }
+          }
+          <div class="view-section-label">Exemplos visuais <span>Notícias fictícias do protótipo</span></div>
+          <div class="feed-tabs" role="tablist" aria-label="Origem das notícias">
+            <button class="feed-tab" [class.active]="tab === 'for-you'" (click)="tab = 'for-you'" role="tab" [attr.aria-selected]="tab === 'for-you'">Para você</button>
+            <button class="feed-tab" [class.active]="tab === 'following'" (click)="tab = 'following'" role="tab" [attr.aria-selected]="tab === 'following'">Seguindo</button>
+            <button class="feed-settings" (click)="openMessage('Sobre o feed', 'A seleção é demonstrativa. No produto, relevância, atualidade, confiabilidade e diversidade formarão o feed.')" aria-label="Sobre a seleção do feed"><app-icon name="sliders" /></button>
+          </div>
+          <div class="topic-list" aria-label="Filtrar por assunto">
+            @for (item of topics; track item) { <button class="topic" [class.active]="topic === item" (click)="topic = item" [attr.aria-pressed]="topic === item">{{ item }}</button> }
+          </div>
+          <div id="feed-results">
+            @for (article of filteredArticles; track article.id) {
+              <ng-container *ngTemplateOutlet="articleCard; context: { $implicit: article, rank: false }" />
+            } @empty {
+              <ng-container *ngTemplateOutlet="emptyState; context: { title: 'Um assunto para a próxima conversa', text: 'Não há notícias demonstrativas nesta seleção. Experimente outro assunto.', button: 'Limpar filtros' }" />
+            }
+          </div>
+        }
+
+        @if (view === 'publisher') { <app-publisher-console (published)="refreshPublished()" /> }
+
+        @if (view === 'reactions') {
+          <div class="critique-controls">
+            <div class="segmented-control" aria-label="Formato da reaction">
+              @for (filter of filters; track filter) { <button [class.active]="critiqueFilter === filter" (click)="critiqueFilter = filter" [attr.aria-pressed]="critiqueFilter === filter">{{ filter }}</button> }
+            </div>
+            <span class="critique-controls-note">Vídeo, áudio, texto e conversa.</span>
+          </div>
+          @if (articleFilter && articleById(articleFilter); as filteredArticle) {
+            <div class="filter-context"><app-icon name="link" /> Reactions sobre {{ filteredArticle.publisher }}<button (click)="articleFilter = null" aria-label="Ver todas as reactions"><app-icon name="close" /></button></div>
+          }
+          @if (critiqueFilter !== 'Em texto') {
+            <section class="video-feed-section">
+              <div class="video-feed-heading"><div><div class="eyebrow">A COMUNIDADE EM REACTIONS</div><h2>Veja como outras pessoas<br><em>estão lendo essa notícia.</em></h2></div><button class="video-record-cta" (click)="open('record', articleFilter || 1)"><app-icon name="video" /> Gravar reaction</button></div>
+              <p class="video-feed-caption">Role para descobrir reactions em vídeo. Cada pessoa parte de uma notícia e traz o próprio olhar para a conversa.</p>
+              <div class="video-reel">
+                @for (clip of filteredClips; track clip.id; let index = $index) {
+                  @if (critiqueById(clip.id); as critique) {
+                    @if (articleById(critique.article); as article) {
+                      <article class="video-reel-card">
+                        <img class="video-reel-image" [src]="clip.image" [alt]="'Imagem ilustrativa da reaction em vídeo de ' + critique.name" />
+                        <div class="video-reel-gradient"></div>
+                        <div class="video-reel-top"><span><app-icon name="video" /> REACTION EM VÍDEO</span><span>{{ index + 1 }} / {{ filteredClips.length }}</span></div>
+                        <button class="video-reel-play" (click)="open('video', article.id)" aria-label="Abrir reaction em vídeo"><app-icon name="play" /></button>
+                        <div class="video-reel-actions">
+                          <button class="video-action" [class.selected]="critiqueLikes.has(critique.id.toString())" (click)="toggleCritiqueLike(critique.id)" aria-label="Curtir reaction"><app-icon name="heart" /><span>{{ critique.likes + (critiqueLikes.has(critique.id.toString()) ? 1 : 0) }}</span></button>
+                          <button class="video-action" (click)="open('comments', article.id)" aria-label="Abrir conversa"><app-icon name="comment" /><span>{{ critique.comments }}</span></button>
+                          <button class="video-action" (click)="shareArticle(article.id)" aria-label="Compartilhar"><app-icon name="share" /></button>
+                          <button class="video-action" (click)="openMessage('Sobre as reactions', 'Cada reaction fica ligada à notícia que iniciou a conversa.')" aria-label="Sobre reactions"><app-icon name="more" /></button>
+                        </div>
+                        <div class="video-reel-bottom">
+                          <div class="video-reel-author"><span class="avatar" [style.background]="critique.color">{{ critique.initials }}</span><div><strong>{{ critique.name }}</strong><span>{{ critique.role }} · {{ critique.time }}</span></div><button class="video-follow" (click)="toggleFollow(article.publisher)">{{ following.has(article.publisher) ? 'Seguindo' : 'Seguir' }}</button></div>
+                          <h2>{{ clip.caption }}</h2><p>{{ critique.body }}</p>
+                          <button class="video-reel-news" (click)="open('article', article.id)"><app-icon name="link" /><span><small>REAGINDO À NOTÍCIA · {{ article.publisher.toUpperCase() }}</small>{{ article.title }}</span><app-icon name="chevron" /></button>
+                        </div>
+                        <div class="video-reel-progress"><span></span></div>
+                      </article>
+                    }
+                  }
+                } @empty { <ng-container *ngTemplateOutlet="emptyState; context: { title: 'Um espaço para outro olhar.', text: 'Ainda não há reactions desta seleção.', button: 'Ver todas as reactions' }" /> }
+              </div>
+            </section>
+          }
+          @if (critiqueFilter !== 'Em vídeo') {
+            <div class="text-critique-heading"><div><div class="eyebrow">OUTRAS PERSPECTIVAS</div><h2>Leia, responda, pense junto.</h2></div><span>{{ filteredCritiques.length }} reactions em texto</span></div>
+            @for (critique of filteredCritiques; track critique.id) { <ng-container *ngTemplateOutlet="critiqueCard; context: { $implicit: critique }" /> }
+          }
+          <div class="community-note"><app-icon name="spark" /> Sua interpretação faz parte da notícia.</div>
+        }
+
+        @if (view === 'communities') {
+          <section class="community-hero"><div><div class="eyebrow">ESPAÇOS CRIADOS PELA COMUNIDADE</div><h2>Uma timeline com<br><em>o seu recorte do mundo.</em></h2><p>Escolha um tema, convide pessoas e acompanhe apenas os portais que fazem sentido para aquela conversa.</p></div><button class="button-primary" (click)="openMessage('Criar comunidade', 'O formulário de criação será conectado em uma próxima etapa. Esta tela demonstra a experiência planejada.')"><app-icon name="users" /> Criar comunidade</button></section>
+          <div class="community-picker">
+            @for (community of communities; track community.id) {
+              <button class="community-tile" [class.active]="communityId === community.id" (click)="communityId = community.id" [attr.aria-pressed]="communityId === community.id"><span class="community-tile-mark" [style.background]="community.color" [style.color]="community.accent">{{ community.initials }}</span><span><strong>{{ community.name }}</strong><small>{{ community.members }} membros · {{ community.topic }}</small></span><app-icon [name]="communityId === community.id ? 'check' : 'chevron'" /></button>
+            }
+          </div>
+          <div class="community-layout">
+            <main class="community-main">
+              <header class="community-header"><div><div class="community-title-line"><span class="community-big-mark" [style.background]="selectedCommunity.color" [style.color]="selectedCommunity.accent">{{ selectedCommunity.initials }}</span><div><h2>{{ selectedCommunity.name }}</h2><p>{{ selectedCommunity.members }} membros · <b>{{ selectedCommunity.online }} online</b></p></div></div><p class="community-description">{{ selectedCommunity.description }}</p></div><button class="community-join" [class.joined]="joinedCommunities.has(selectedCommunity.id)" (click)="toggleSet(joinedCommunities, selectedCommunity.id)">{{ joinedCommunities.has(selectedCommunity.id) ? 'Participando' : 'Participar' }}</button></header>
+              <div class="community-tabs"><button class="active">Timeline</button><button (click)="openMessage(selectedCommunity.name, selectedCommunity.description)">Sobre a comunidade</button><span>{{ selectedCommunityPublishers.length }} portais ativos</span></div>
+              @if (selectedCommunityPublishers.length) {
+                @for (articleId of selectedCommunity.postIds; track articleId; let index = $index) {
+                  @if (communityPostArticle(articleId); as article) {
+                    @if (communityPostPublisher(index); as publisher) {
+                      <article class="community-post">
+                        <header class="community-post-head"><span class="publisher-logo">{{ publisher.mark }}</span><div><strong>{{ publisher.name }} <app-icon name="verified" className="verified-icon" /></strong><span>{{ selectedCommunity.topic }} · Há {{ index + 1 }} h</span></div><span class="admin-source">Portal escolhido pelo admin</span></header>
+                        <button class="community-post-title" (click)="open('article', article.id)"><span class="community-post-topic">{{ selectedCommunity.topic }}</span><h3>{{ article.title }}</h3></button><p>{{ article.summary }}</p>
+                        <app-audio-player [article]="article" [compact]="true" [playing]="audioPlaying === article.id" (togglePlay)="toggleAudio($event)" (showInfo)="showAudioInfo($event)" (playExpert)="showExpertAudio($event)" />
+                        <footer class="community-post-actions"><button (click)="open('comments', article.id)"><app-icon name="comment" /> {{ article.comments }} comentários</button><button (click)="shareArticle(article.id)"><app-icon name="share" /> Compartilhar</button><button class="community-reaction-link" (click)="showReactions(article.id)">Ver reactions <app-icon name="arrow" /></button></footer>
+                      </article>
+                    }
+                  }
+                }
+              } @else {
+                <div class="community-empty"><app-icon name="news" /><h3>O admin ainda não escolheu portais.</h3><p>Quando um portal for adicionado, as notícias dele aparecem nesta timeline.</p></div>
+              }
+            </main>
+            <aside class="community-admin">
+              <div class="admin-header"><div><div class="eyebrow">CONTROLE DA COMUNIDADE</div><h2>Portais da timeline</h2></div><app-icon name="sliders" /></div>
+              <p>O administrador escolhe quais veículos entram no feed de <strong>{{ selectedCommunity.name }}</strong>.</p>
+              <div class="admin-selected"><span><app-icon name="check" /> {{ selectedCommunityPublishers.length }} selecionados</span><small>Somente o admin edita</small></div>
+              @for (publisher of selectedCommunity.publishers; track publisher.name) {
+                <button class="admin-publisher" [class.selected]="communityPublishers[selectedCommunity.id].has(publisher.name)" (click)="toggleCommunityPublisher(publisher.name)"><span class="publisher-mini-mark" [style.background]="selectedCommunity.color" [style.color]="selectedCommunity.accent">{{ publisher.mark }}</span><span><strong>{{ publisher.name }}</strong><small>{{ publisher.description }}</small></span><span class="admin-toggle">@if (communityPublishers[selectedCommunity.id].has(publisher.name)) { <app-icon name="check" /> } @else { + }</span></button>
+              }
+              <button class="admin-add" (click)="openMessage('Adicionar portal', 'A busca de publishers será conectada quando houver backend e cadastro institucional.')"><app-icon name="globe" /> Adicionar outro portal</button>
+              <div class="admin-note"><app-icon name="info" /> A comunidade conversa sobre notícias publicadas por esses veículos. Reactions e comentários continuam ligados a cada notícia.</div>
+            </aside>
+          </div>
+          <div class="community-footnote"><app-icon name="spark" /> Comunidades ajudam a transformar interesse em participação.</div>
+        }
+
+        @if (view === 'popular') {
+          <section class="popular-intro"><div><div class="eyebrow">A COMUNIDADE ESTÁ FALANDO</div><h2>Mais que repercussão.<br>Uma conversa que vale acompanhar.</h2></div><app-icon name="fire" /></section>
+          <div class="view-section-label">Notícias em destaque <span>Seleção demonstrativa</span></div>
+          <ng-container *ngTemplateOutlet="articleCard; context: { $implicit: articles[0], rank: true }" />
+          <div class="view-section-label">Uma perspectiva em destaque <app-icon name="critique" /></div>
+          <ng-container *ngTemplateOutlet="critiqueCard; context: { $implicit: critiques[0] }" />
+          <ng-container *ngTemplateOutlet="articleCard; context: { $implicit: articles[1], rank: true }" />
+        }
+
+        @if (view === 'saved') {
+          <div class="view-section-label">{{ saved.size }} notícias salvas <span>Uma boa ideia merece uma segunda leitura.</span></div>
+          @for (article of savedArticles; track article.id) { <ng-container *ngTemplateOutlet="articleCard; context: { $implicit: article, rank: false }" /> }
+          @if (!savedArticles.length) { <ng-container *ngTemplateOutlet="emptyState; context: { title: 'Guarde o que faz você pensar.', text: 'Toque no marcador de uma notícia para encontrá-la aqui, quando quiser voltar.', button: 'Explorar notícias' }" /> }
+        }
+
+        @if (view === 'profile') {
+          <section class="profile-card"><div class="profile-cover"><span>Facts first.<br>Your take next.</span><app-icon name="spark" /></div><div class="profile-content"><span class="avatar large">CH</span><h2>Charles</h2><span class="profile-handle">&#64;charles · Membro da comunidade</span><p>Curioso sobre o mundo. Aberto a outros pontos de vista.</p><div class="profile-stats"><div><strong>{{ ownCritiques.length }}</strong><span>Críticas</span></div><div><strong>{{ following.size }}</strong><span>Veículos seguidos</span></div><div><strong>{{ saved.size }}</strong><span>Notícias salvas</span></div></div></div></section>
+          <div class="view-section-label">Seus pontos de vista <span>{{ ownCritiques.length }} críticas</span></div>
+          @for (critique of ownCritiques; track critique.id) { <ng-container *ngTemplateOutlet="critiqueCard; context: { $implicit: critique }" /> }
+          @if (!ownCritiques.length) { <ng-container *ngTemplateOutlet="emptyState; context: { title: 'Sua primeira conversa começa aqui.', text: 'Abra uma notícia, conheça as evidências e compartilhe seu ponto de vista.', button: 'Explorar notícias' }" /> }
+          <div class="view-section-label">Veículos que você acompanha</div>
+          <div class="profile-publishers">
+            @for (article of articles; track article.id) { @if (following.has(article.publisher)) { <div class="suggestion"><span class="publisher-logo">{{ article.mark }}</span><div class="suggestion-info"><strong>{{ article.publisher }} <app-icon name="verified" className="verified-icon" /></strong><small>{{ article.topic }}</small></div><button class="follow-button following" (click)="toggleFollow(article.publisher)">Seguindo</button></div> } }
+          </div>
+          <p class="profile-demo">Perfil demonstrativo. As interações duram apenas nesta sessão.</p>
+        }
+      </main>
+
+      <aside class="right-column">
+        <section class="trending-section"><h2 class="section-kicker">Em pauta <app-icon name="fire" /></h2><p class="section-caption">CONVERSAS QUE IMPORTAM</p>
+          <button class="trending-row" (click)="setTopic('Sociedade')"><span class="trending-number">01</span><span><span class="trend-topic">SOCIEDADE</span><span class="trend-title">O futuro das nossas cidades</span><span class="trend-count">128 pessoas conversando</span></span></button>
+          <button class="trending-row" (click)="setTopic('Ciência')"><span class="trending-number">02</span><span><span class="trend-topic">CIÊNCIA</span><span class="trend-title">Energia que se compartilha</span><span class="trend-count">96 pessoas conversando</span></span></button>
+          <button class="trending-row" (click)="setTopic('Tecnologia')"><span class="trending-number">03</span><span><span class="trend-topic">TECNOLOGIA</span><span class="trend-title">IA no nosso dia a dia</span><span class="trend-count">74 pessoas conversando</span></span></button>
+        </section>
+        <section class="publishers-section"><h2 class="section-kicker">Outros olhares <app-icon name="globe" /></h2>
+          @for (article of [articles[2], articles[1]]; track article.id) { <div class="suggestion"><span class="publisher-logo" [class]="'publisher-logo ' + (article.logo || '')">{{ article.mark }}</span><div class="suggestion-info"><strong>{{ article.publisher }} <app-icon name="verified" className="verified-icon" /></strong><small>{{ article.id === 3 ? 'Tecnologia e cotidiano' : 'Ciência para entender o mundo' }}</small></div><button class="follow-button" [class.following]="following.has(article.publisher)" (click)="toggleFollow(article.publisher)">{{ following.has(article.publisher) ? 'Seguindo' : 'Seguir' }}</button></div> }
+        </section>
+        <section class="fop-intro"><div class="fop-wordmark"><app-icon name="shield" /> FOP</div><h3>Boas conversas<br>começam com fatos.</h3><p>Antes de chegar até você, cada notícia passa por uma análise de evidências.</p><button (click)="open('how')">Conheça a FOP <app-icon name="arrow" /></button></section>
+        <footer class="right-footer"><div class="demo-label"><app-icon name="info" /> Protótipo visual · conteúdo fictício</div><span>TAKTA © 2026 · Facts first. Your take next.</span></footer>
+      </aside>
+    </div>
+  </div>
+
+  <nav class="mobile-nav" aria-label="Navegação móvel">
+    @for (item of nav; track item.id) { <button class="mobile-item" [class.active]="view === item.id" (click)="navigate(item.id)" [attr.aria-current]="view === item.id ? 'page' : null"><app-icon [name]="item.icon" /><span>{{ item.id === 'profile' ? 'Perfil' : item.label }}</span></button> }
+  </nav>
+</div>
+
+<ng-template #articleCard let-article let-rank="rank">
+  <app-news-card [article]="article" [rank]="rank" [liked]="liked.has(article.id)" [saved]="saved.has(article.id)" [addedComments]="comments[article.id]?.length || 0" [audioPlaying]="audioPlaying === article.id" (openArticle)="open('article', $event)" (openEvidence)="open('evidence', $event)" (openComments)="open('comments', $event)" (viewReactions)="showReactions($event)" (toggleLike)="toggleLike($event)" (toggleSave)="toggleSave($event)" (share)="shareArticle($event)" (toggleAudio)="toggleAudio($event)" (audioInfo)="showAudioInfo($event)" (expertAudio)="showExpertAudio($event)" (more)="openMessage('Opções da notícia', 'Este menu será conectado às opções de denúncia, ocultação e acompanhamento.')" />
+</ng-template>
+
+<ng-template #critiqueCard let-critique>
+  @if (articleById(critique.article); as article) {
+    <article class="critique-card" [class.video-critique]="critique.type === 'video'">
+      <header class="critique-author"><span class="avatar" [style.background]="critique.color">{{ critique.initials }}</span><div><strong>{{ critique.name }}</strong><span>{{ critique.role }} · {{ critique.time }}</span></div><span class="critique-format"><app-icon [name]="critique.type === 'video' ? 'video' : 'pen'" /> {{ critique.type === 'video' ? 'Vídeo' : 'Crítica' }}</span></header>
+      @if (critique.type === 'video') {
+        <button class="video-preview" (click)="open('video', article.id)" aria-label="Abrir prévia visual da crítica em vídeo"><img src="solar-energy.jpg" alt="Painéis solares ilustrando o tema da crítica" /><span class="video-preview-shade"></span><span class="video-overline">OUTRO PONTO DE VISTA</span><span class="video-quote">{{ critique.text }}</span><span class="play-circle"><app-icon name="play" /></span><span class="video-badge">PRÉVIA VISUAL · 0:42</span></button>
+      } @else {
+        <div class="critique-body"><span class="quote-mark">“</span><h2>{{ critique.text }}</h2>@if (critique.body) { <p>{{ critique.body }}</p> }</div>
+      }
+      <button class="critique-reference" (click)="open('article', article.id)"><app-icon name="link" /><span><small>REAGINDO À NOTÍCIA · {{ article.publisher.toUpperCase() }}</small><strong>{{ article.title }}</strong></span><app-icon name="chevron" /></button>
+      <footer class="critique-actions"><button class="card-action" [class.selected]="critiqueLikes.has(critique.id.toString())" (click)="toggleCritiqueLike(critique.id)"><app-icon name="heart" /> {{ critique.likes + (critiqueLikes.has(critique.id.toString()) ? 1 : 0) }}</button><button class="card-action" (click)="open('comments', article.id)"><app-icon name="comment" /> Ver conversa</button><button class="critique-response" (click)="open('compose', article.id)">Meu ponto de vista <app-icon name="arrow" /></button></footer>
+    </article>
+  }
+</ng-template>
+
+<ng-template #emptyState let-title="title" let-text="text" let-button="button">
+  <div class="empty-state"><app-icon name="bookmark" /><h2>{{ title }}</h2><p>{{ text }}</p><button class="button-secondary" (click)="navigate('news')">{{ button }} <app-icon name="arrow" /></button></div>
+</ng-template>
+
+@if (panel) {
+  <div class="overlay-backdrop" [class.modal-layout]="panel === 'record'" (click)="$event.target === $event.currentTarget && closePanel()">
+    <section class="detail-panel" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+      <header class="panel-header">
+        @if (panel === 'evidence' || panel === 'how' || panel === 'liveEvidence') { <h2 class="fop-wordmark" id="dialog-title"><app-icon name="shield" /> FOP <span class="fop-submark">Fact On Publication</span></h2> }
+        @else { <h2 id="dialog-title">{{ panel === 'article' ? 'A notícia' : panel === 'comments' ? 'A conversa' : panel === 'compose' ? 'Seu ponto de vista' : panel === 'video' ? 'Uma reaction em vídeo' : panel === 'record' ? 'Gravar reaction' : panelTitle }}</h2> }
+        <button class="icon-button" (click)="closePanel()" aria-label="Fechar painel"><app-icon name="close" /></button>
+      </header>
+      <div class="panel-body">
+        @if (panel === 'liveEvidence' && liveArticle; as article) {
+          <div class="eyebrow">NOTÍCIA PUBLICADA · {{ article.publisher.toUpperCase() }}</div><h3 class="panel-headline">{{ article.title }}</h3><p class="live-body">{{ article.body }}</p><h3 class="panel-subtitle">Resultado da verificação FOP</h3><p class="live-result" [class]="articleVerdict(article)">{{ articleResult(article) }}</p>
+          @if (article.manual_review) { <p class="demo-note">Publicação aprovada após revisão manual de documento ou imagem. A comparação automática de texto não encontrou evidências suficientes para todas as afirmações.</p> }
+          @for (claim of article.claims; track claim.id) { <article class="live-claim" [class]="'live-claim ' + claim.verdict.toLowerCase()"><strong>{{ claim.text }}</strong><p>{{ claim.explanation }}</p><small>Confiança da comparação textual: {{ claim.confidence }}</small>@for (source of claim.evidence; track source.id) { <div class="source-card"><div class="source-top">{{ source.source_title }} <small>{{ relationLabel(source.relation) }}</small></div><p>“{{ source.excerpt }}”</p>@if (source.source_url) { <a [href]="source.source_url" target="_blank" rel="noopener noreferrer">Abrir fonte original</a> }</div> }</article> }
+          <p class="demo-note">Análise automática de textos com revisão humana. As conclusões podem mudar com novas evidências.</p>
+        }
+        @if (panel === 'message') { <div class="message-panel"><app-icon name="info" /><p>{{ panelMessage }}</p></div> }
+        @if (panel === 'how') {
+          <div class="eyebrow">FATOS PRIMEIRO. SUA VISÃO DEPOIS.</div><h3 class="how-title">Uma base confiável.<br><em>Mil formas de pensar.</em></h3>
+          <div class="how-step"><div class="how-number">1</div><div><h3>A notícia chega</h3><p>O publisher envia a notícia e separa as afirmações que precisam ser verificadas.</p></div></div>
+          <div class="how-step"><div class="how-number">2</div><div><h3>As evidências entram em cena</h3><p>A FOP identifica afirmações e busca fontes relevantes para comparar o que elas dizem.</p></div></div>
+          <div class="how-step"><div class="how-number">3</div><div><h3>A análise fica à vista</h3><p>Você pode consultar o que sustenta, contradiz ou ainda não permite concluir sobre uma afirmação.</p></div></div>
+          <div class="state-legend"><div class="state-chip support">Evidências apoiam</div><div class="state-chip refute">Evidências contradizem</div><div class="state-chip wait">Sem evidências suficientes</div><div class="state-chip conflict">Conclusões diferentes</div></div>
+          <p class="demo-note">O fluxo de publicação usa busca, comparação textual e revisão humana. As notícias da seção “Exemplos visuais” são fictícias.</p>
+        }
+        @if (selectedArticle; as article) {
+          @if (panel === 'evidence') {
+            <div class="eyebrow">POR TRÁS DA NOTÍCIA</div><h3 class="panel-headline">{{ article.title }}</h3>
+            <div class="status-card"><div class="status-title"><app-icon name="shield" /> As evidências encontradas apoiam esta afirmação.</div><p>As fontes deste exemplo apoiam as afirmações analisadas. A interpretação da notícia continua com você.</p><div class="status-meta"><span><app-icon name="check" /> Confiança alta</span><span><app-icon name="document" /> {{ article.sources.length }} fontes</span><span><app-icon name="clock" /> Análise demonstrativa</span></div></div>
+            <h3 class="panel-subtitle">O que foi analisado</h3><div class="claim-list">@for (claim of article.claims; track claim) { <div class="claim-item"><app-icon name="check" /><span>{{ claim }}</span></div> }</div>
+            <h3 class="panel-subtitle">Evidências encontradas</h3>@for (source of article.sources; track source.title; let index = $index) { <article class="source-card"><div class="source-top"><span class="source-icon"><app-icon [name]="index ? 'globe' : 'document'" /></span>{{ source.title }}<small>Apoia</small></div><p>“{{ source.excerpt }}”</p><footer>{{ source.kind }} · fonte e trecho fictícios</footer></article> }
+            <p class="demo-note">Este é um exemplo visual. Nenhuma verificação real foi executada.</p>
+          }
+          @if (panel === 'article') {
+            <div class="card-publisher article-publisher"><span class="publisher-logo">{{ article.mark }}</span><div><span class="publisher-name">{{ article.publisher }} <app-icon name="verified" className="verified-icon" /></span><span class="publisher-meta">{{ article.time }} · Leitura de 3 min</span></div></div><h3 class="panel-headline">{{ article.title }}</h3>
+            <div class="evidence-strip"><span class="evidence-state"><app-icon name="shield" /> Exemplo visual da <b>FOP</b></span><button class="evidence-link" (click)="open('evidence', article.id)">Ver evidências <app-icon name="chevron" /></button></div>
+            <div class="article-reading">@if (article.image) { <img [src]="article.image" alt="Fotografia ilustrativa da notícia" /> }<p>{{ article.summary }}</p><app-audio-player [article]="article" [playing]="audioPlaying === article.id" (togglePlay)="toggleAudio($event)" (showInfo)="showAudioInfo($event)" (playExpert)="showExpertAudio($event)" /><p>{{ readingParagraph(article.id) }}</p><h3>O que está em discussão</h3><p>O acesso, a participação da comunidade e os impactos no cotidiano são pontos centrais do debate. Os documentos apresentados explicam a proposta, mas suas consequências ainda permitem diferentes leituras.</p><p class="article-quote">Os fatos são o ponto de partida. A conversa sobre o que eles significam pertence a todos.</p></div>
+          }
+          @if (panel === 'comments') {
+            <div class="eyebrow">SOBRE ESTA NOTÍCIA</div><h3 class="panel-headline">{{ article.title }}</h3><div class="comment-section-title">Diferentes olhares, uma conversa.</div>
+            @for (comment of commentsFor(article.id); track $index) { <article class="comment-item"><span class="avatar" [style.background]="comment.color">{{ comment.initials }}</span><div class="comment-content"><div class="comment-name">{{ comment.name }}<span>{{ comment.name === 'Charles' ? 'Agora' : 'Há 15 min' }}</span></div><p>{{ comment.text }}</p><div class="comment-actions"><button (click)="comment.likes = comment.likes + 1"><app-icon name="heart" /> {{ comment.likes }}</button><button (click)="commentDraft = '@' + comment.name + ' '">Responder</button></div></div></article> }
+            <p class="compose-hint">Discordar faz parte. Respeitar também.</p>
+          }
+          @if (panel === 'compose') {
+            <div class="eyebrow">TODA CRÍTICA COMEÇA COM UMA NOTÍCIA</div><h3 class="panel-headline">O que essa notícia faz você pensar?</h3><div class="linked-news"><app-icon name="link" /><span><small>REAGINDO À NOTÍCIA · {{ article.publisher.toUpperCase() }}</small>{{ article.title }}</span></div><div class="format-choice"><button class="active" type="button"><app-icon name="pen" /> Em texto</button><button (click)="open('record', article.id)" type="button"><app-icon name="video" /> Em vídeo</button></div><label class="compose-label" for="critique-text">Sua perspectiva</label><textarea id="critique-text" class="compose-textarea" [(ngModel)]="critiqueDraft" placeholder="Concorde, questione, traga outro ângulo..." maxlength="2000"></textarea><p class="compose-hint">Traga argumentos e respeite outros pontos de vista. Sua crítica sempre ficará vinculada à notícia original.</p>
+          }
+          @if (panel === 'video') {
+            @if (critiqueById(article.id); as critique) { <div class="video-storyboard"><img src="solar-energy.jpg" alt="Imagem ilustrativa como fundo da reaction" /><div class="storyboard-content"><span class="storyboard-kicker">UM OLHAR DE {{ critique.name.toUpperCase() }}</span><h3>{{ critique.text }}</h3><p>{{ critique.body }}</p><span class="storyboard-caption">Prévia visual do formato de reaction</span></div></div><div class="critique-author video-author"><span class="avatar" [style.background]="critique.color">{{ critique.initials }}</span><div><strong>{{ critique.name }}</strong><span>{{ critique.role }}</span></div></div> }
+            <div class="linked-news"><app-icon name="link" /><span><small>REAGINDO À NOTÍCIA · {{ article.publisher.toUpperCase() }}</small>{{ article.title }}</span></div><p class="demo-note">Esta tela demonstra a aparência de uma reaction em vídeo. Não há reprodução real nesta etapa.</p>
+          }
+          @if (panel === 'record') {
+            <div class="record-stage"><div class="record-stage-corners"></div><div class="record-stage-glow"><app-icon name="video" /></div><div class="record-stage-label">CÂMERA FRONTAL · PRÉVIA</div><div class="record-stage-person">Seu vídeo aparece aqui</div><button class="record-button" (click)="toast('A câmera não é ativada neste protótipo.')" aria-label="Começar gravação"><span></span></button><div class="record-stage-hint">Toque para começar · máximo de 60s</div></div><div class="linked-news"><app-icon name="link" /><span><small>REAGINDO À NOTÍCIA · {{ article.publisher.toUpperCase() }}</small>{{ article.title }}</span></div><p class="demo-note">Esta é uma prévia da tela de gravação. A câmera não é ativada neste protótipo.</p>
+          }
+        }
+      </div>
+      @if (panel === 'comments' && selectedArticle) { <footer class="panel-footer"><form class="comment-composer" (ngSubmit)="addComment()"><input name="comment" [(ngModel)]="commentDraft" maxlength="1500" required placeholder="Qual é o seu ponto de vista?" aria-label="Escrever comentário" /><button class="send-button" aria-label="Enviar comentário"><app-icon name="send" /></button></form></footer> }
+      @if (panel === 'article' && selectedArticle) { <footer class="panel-footer"><button class="button-secondary" (click)="open('comments', selectedArticle.id)"><app-icon name="comment" /> Comentários</button><button class="button-primary" (click)="open('compose', selectedArticle.id)"><app-icon name="pen" /> Minha reaction</button></footer> }
+      @if (panel === 'compose') { <footer class="panel-footer"><button class="button-secondary" (click)="closePanel()">Cancelar</button><button class="button-primary" (click)="publishCritique()" [disabled]="!critiqueDraft.trim()">Publicar crítica <app-icon name="arrow" /></button></footer> }
+    </section>
+  </div>
+}
+
+<div class="toast" [class.visible]="toastMessage" role="status" aria-live="polite">{{ toastMessage }}</div>

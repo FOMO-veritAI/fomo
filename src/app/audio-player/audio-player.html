@@ -1,0 +1,31 @@
+@if (audio) {
+  <section class="audio-module" [class.compact]="compact" aria-label="Áudio da notícia">
+    <div class="audio-module-head">
+      <span><app-icon name="volume" /> {{ compact ? 'PODCAST DA NOTÍCIA' : 'OUÇA ESTA NOTÍCIA' }}</span>
+      <span>{{ audio.duration }}</span>
+    </div>
+    <div class="audio-player">
+      <button class="audio-play" [class.playing]="playing" (click)="togglePlay.emit(article.id)" [attr.aria-label]="playing ? 'Pausar podcast' : 'Ouvir podcast'" [attr.aria-pressed]="playing">
+        <app-icon [name]="playing ? 'volume' : 'play'" />
+      </button>
+      <div class="audio-player-copy">
+        <strong>{{ audio.title }}</strong>
+        <span>{{ audio.host }} · {{ audio.duration }}</span>
+        <div class="audio-wave">@for (_ of bars; track $index) { <i></i> }</div>
+      </div>
+      <button class="audio-more" (click)="showInfo.emit(article.id)" aria-label="Sobre este áudio"><app-icon name="more" /></button>
+    </div>
+    @if (!compact) {
+      <div class="expert-audio-title"><span><app-icon name="mic" /> Especialistas em debate</span><small>Comentários em áudio</small></div>
+      <div class="expert-audio-list">
+        @for (expert of audio.experts; track expert.name; let index = $index) {
+          <button class="expert-audio" (click)="playExpert.emit(article.id + '|' + index)" [attr.aria-label]="'Ouvir comentário de ' + expert.name">
+            <span class="avatar" [style.background]="expert.color">{{ expert.initials }}</span>
+            <span><strong>{{ expert.name }}</strong><small>{{ expert.role }} · {{ expert.duration }}</small></span>
+            <span class="expert-audio-play"><app-icon name="play" /></span>
+          </button>
+        }
+      </div>
+    }
+  </section>
+}
