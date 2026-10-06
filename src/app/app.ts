@@ -6,7 +6,7 @@ import { Article, CommentItem, Community, Critique, ViewName } from './models';
 import { IconComponent } from './icon/icon';
 import { NewsCardComponent } from './news-card/news-card';
 import { AudioPlayerComponent } from './audio-player/audio-player';
-import { FopArticle, fopApi } from './fop-api';
+import { FopPublicArticle, fopApi } from './fop-api';
 import { PublisherConsoleComponent } from './publisher-console/publisher-console';
 
 type PanelKind = 'evidence' | 'article' | 'comments' | 'compose' | 'how' | 'video' | 'record' | 'message' | 'liveEvidence' | null;
@@ -29,8 +29,8 @@ export class App implements OnInit {
   readonly audio = AUDIO;
   readonly topics = ['Todos', 'Sociedade', 'Tecnologia', 'Ciência', 'Cultura', 'Planeta'];
   readonly filters = ['Todas', 'Em texto', 'Em vídeo'];
-  publicArticles: FopArticle[] = [];
-  liveArticle: FopArticle | null = null;
+  publicArticles: FopPublicArticle[] = [];
+  liveArticle: FopPublicArticle | null = null;
   readonly nav: { id: ViewName; icon: string; label: string }[] = [
     { id: 'news', icon: 'news', label: 'Notícias' },
     { id: 'reactions', icon: 'critique', label: 'Reactions' },
@@ -76,30 +76,9 @@ export class App implements OnInit {
     catch { this.publicArticles = []; }
   }
 
-  openLiveEvidence(article: FopArticle): void {
+  openLiveEvidence(article: FopPublicArticle): void {
     this.liveArticle = article;
     this.open('liveEvidence');
-  }
-
-  relationLabel(relation: string): string {
-    return { entailment: 'Apoia', contradiction: 'Contradiz', neutral: 'Não conclusiva' }[relation] ?? 'Não conclusiva';
-  }
-
-  articleVerdict(article: FopArticle): string {
-    const verdicts = new Set(article.claims.map((claim) => claim.verdict));
-    if (verdicts.has('REFUTED')) return 'refuted';
-    if (verdicts.has('CONFLICTING_EVIDENCE')) return 'conflicting_evidence';
-    if (verdicts.has('NOT_ENOUGH_EVIDENCE')) return 'not_enough_evidence';
-    return 'supported';
-  }
-
-  articleResult(article: FopArticle): string {
-    return {
-      supported: 'As evidências encontradas apoiam as afirmações analisadas.',
-      refuted: 'As evidências encontradas contradizem uma afirmação.',
-      conflicting_evidence: 'As evidências encontradas apresentam conclusões diferentes.',
-      not_enough_evidence: 'Ainda não há evidências textuais suficientes para todas as afirmações.',
-    }[this.articleVerdict(article)] ?? 'Consulte a análise de cada afirmação.';
   }
 
   get currentNavLabel(): string {

@@ -8,3 +8,4 @@ python-dotenv>=1,<2
 sentence-transformers>=5,<7
 transformers>=4.49,<6
 torch>=2.9,<3
+tzdata>=2024.1

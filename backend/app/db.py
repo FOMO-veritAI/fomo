@@ -63,10 +63,28 @@ def init_db() -> None:
           nli_score REAL NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS analises (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          article_id INTEGER NOT NULL REFERENCES articles(id),
+          modo TEXT NOT NULL,
+          data_noticia TEXT NOT NULL,
+          relatorio_json TEXT NOT NULL,
+          versoes_json TEXT NOT NULL,
+          criado_em TEXT NOT NULL
+        );
         CREATE INDEX IF NOT EXISTS idx_articles_status ON articles(status);
+        CREATE INDEX IF NOT EXISTS idx_analises_article ON analises(article_id);
         CREATE INDEX IF NOT EXISTS idx_claims_article ON claims(article_id);
         CREATE INDEX IF NOT EXISTS idx_evidence_article ON evidence(article_id);
         """)
+        # Bancos criados antes da integração com a VeritAI não têm estas colunas.
+        for table, column, definition in (
+            ("claims", "texto_publico", "TEXT NOT NULL DEFAULT ''"),
+            ("claims", "relatorio_json", "TEXT NOT NULL DEFAULT ''"),
+            ("evidence", "data_publicacao", "TEXT"),
+        ):
+            if column not in {row["name"] for row in db.execute(f"PRAGMA table_info({table})")}:
+                db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
 def article_record(db: sqlite3.Connection, article_id: int):
@@ -78,6 +96,7 @@ def article_record(db: sqlite3.Connection, article_id: int):
     result["claims"] = []
     for claim in db.execute("SELECT * FROM claims WHERE article_id=? ORDER BY id", (article_id,)):
         item = dict(claim)
+        item["relatorio"] = json.loads(item.pop("relatorio_json") or "null")
         item["evidence"] = [
             {key: value for key, value in dict(source).items() if key not in {"full_text", "file_path"}}
             for source in db.execute("SELECT * FROM evidence WHERE claim_id=? ORDER BY similarity DESC", (claim["id"],))
@@ -87,4 +106,12 @@ def article_record(db: sqlite3.Connection, article_id: int):
         {key: value for key, value in dict(source).items() if key not in {"full_text", "file_path"}}
         for source in db.execute("SELECT * FROM evidence WHERE article_id=? AND claim_id IS NULL", (article_id,))
     ]
+    analise = db.execute("SELECT id,modo,data_noticia,relatorio_json,versoes_json,criado_em FROM analises WHERE article_id=? ORDER BY id DESC LIMIT 1", (article_id,)).fetchone()
+    result["analise"] = None
+    if analise:
+        relatorio = json.loads(analise["relatorio_json"])
+        result["analise"] = {
+            "id": analise["id"], "modo": analise["modo"], "data_noticia": analise["data_noticia"], "criado_em": analise["criado_em"],
+            "versoes": json.loads(analise["versoes_json"]), "avisos": relatorio.get("avisos", []),
+        }
     return result

@@ -12,3 +12,11 @@ REVIEWER_KEY = os.getenv("TAKTA_REVIEWER_KEY", "")
 GOOGLE_FACT_CHECK_API_KEY = os.getenv("GOOGLE_FACT_CHECK_API_KEY", "")
 EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 NLI_MODEL = "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli"
+
+# Serviço de IA. VERITAI_MODO=embutido usa o pipeline antigo (fop.py e retrieval.py).
+VERITAI_MODO = os.getenv("VERITAI_MODO", "servico").strip().lower()
+VERITAI_URL = os.getenv("VERITAI_URL", "http://127.0.0.1:8100").rstrip("/")
+VERITAI_TIMEOUT = float(os.getenv("VERITAI_TIMEOUT", "600"))
+# Decisão do servidor, nunca do publisher: ele não pode desligar a busca e enviar só evidências favoráveis.
+VERITAI_BUSCAR_WEB = os.getenv("VERITAI_BUSCAR_WEB", "true").strip().lower() not in {"0", "false", "nao", "não", "no"}
+FUSO_NOTICIA = "America/Sao_Paulo"

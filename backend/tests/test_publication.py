@@ -1,18 +1,16 @@
-import os
-import tempfile
 import unittest
 from unittest.mock import patch
 
+import apoio  # noqa: F401  (configura banco temporário e VeritAI simulada antes de importar o app)
 from fastapi.testclient import TestClient
 
 
+# Estes testes exercitam o pipeline antigo, mantido atrás de VERITAI_MODO=embutido.
+# A integração com o serviço VeritAI é testada em test_veritai.py.
+@patch("backend.app.config.VERITAI_MODO", "embutido")
 class PublicationFlowTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.directory = tempfile.TemporaryDirectory()
-        os.environ["TAKTA_DB_PATH"] = os.path.join(cls.directory.name, "test.sqlite3")
-        os.environ["TAKTA_PUBLISHER_KEY"] = "publisher-test-key"
-        os.environ["TAKTA_REVIEWER_KEY"] = "reviewer-test-key"
         from backend.app.main import app
         cls.client_context = TestClient(app)
         cls.client = cls.client_context.__enter__()
@@ -20,7 +18,6 @@ class PublicationFlowTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.client_context.__exit__(None, None, None)
-        cls.directory.cleanup()
 
     def create_article(self):
         response = self.client.post(
@@ -85,6 +82,10 @@ class PublicationFlowTest(unittest.TestCase):
         public = self.client.get(f"/articles/{article_id}")
         self.assertEqual(public.status_code, 200)
         self.assertFalse(public.json()["manual_review"])
+        # Resultado do pipeline embutido nunca é atribuído à VeritAI.
+        self.assertFalse(public.json()["verificado_pela_veritai"])
+        self.assertEqual(public.json()["claims"][0]["origem_analise"], "pipeline_anterior")
+        self.assertTrue(public.json()["claims"][0]["texto_publico"].startswith("Resultado da verificação automática anterior (sem VeritAI)"))
         self.assertNotIn("review_note", public.json())
         self.assertNotIn("attachments", public.json())
 
@@ -113,6 +114,7 @@ class PublicationFlowTest(unittest.TestCase):
         self.assertEqual(approved.status_code, 200)
         public = self.client.get(f"/articles/{article_id}").json()
         self.assertTrue(public["manual_review"])
+        self.assertTrue(public["anexo_sem_texto"])
         self.assertNotIn("attachments", public)
         self.assertNotIn("review_note", public)
 

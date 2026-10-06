@@ -54,3 +54,6 @@ Thumbs.db
 # Modelos e dados locais
 *.sqlite3
 /models/
+
+# Canvas local do Maestri
+.maestri/

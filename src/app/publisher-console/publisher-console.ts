@@ -1,6 +1,11 @@
 import { Component, EventEmitter, OnDestroy, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { fopApi, FopArticle, FopEvidence, FopStatus } from '../fop-api';
+import { fopApi, FopArticle, FopClaim, FopEvidence, FopStatus, VeritaiRelatorioAfirmacao } from '../fop-api';
+
+// Mesmos limites do backend e do contrato da VeritAI.
+const CLAIM_MIN = 10;
+const CLAIM_MAX = 500;
+const CLAIM_COUNT = 8;
 import { IconComponent } from '../icon/icon';
 
 @Component({
@@ -37,7 +42,7 @@ export class PublisherConsoleComponent implements OnDestroy {
 
   statusLabel(status: FopStatus): string {
     return {
-      DRAFT: 'Rascunho', VERIFYING: 'FOP analisando', NEEDS_EVIDENCE: 'Precisa de evidências',
+      DRAFT: 'Rascunho', VERIFYING: 'Em análise automática', NEEDS_EVIDENCE: 'Precisa de evidências',
       AWAITING_REVIEW: 'Aguardando revisão', BLOCKED: 'Publicação bloqueada',
       PUBLISHED: 'Publicada', REJECTED: 'Devolvida ao publisher', ERROR: 'Erro na análise',
     }[status];
@@ -48,7 +53,42 @@ export class PublisherConsoleComponent implements OnDestroy {
   }
 
   relationLabel(relation: string): string {
-    return { entailment: 'Apoia', contradiction: 'Contradiz', neutral: 'Não conclusiva' }[relation] ?? 'Não conclusiva';
+    return ({ apoia: 'Apoia', contradiz: 'Contradiz', neutro: 'Neutra', entailment: 'Apoia', contradiction: 'Contradiz', neutral: 'Neutra' } as Record<string, string>)[relation] ?? 'Neutra';
+  }
+
+  originLabel(origin: string): string {
+    return ({
+      busca_web: 'busca na web', checagem_externa: 'checagem externa', link_publisher: 'link do publisher', anexo: 'anexo do publisher', base_propria: 'base própria',
+      publisher_url: 'link do publisher', publisher_document: 'texto extraído', manual_attachment: 'conferência humana',
+    } as Record<string, string>)[origin] ?? origin;
+  }
+
+  // Sem porcentagem calibrada, nunca mostra número: só "Não avaliável" e o motivo.
+  percentLabel(report: VeritaiRelatorioAfirmacao): string {
+    if (report.avaliavel && report.porcentagem !== null) return `Porcentagem informada pela VeritAI: ${report.porcentagem}`;
+    const reason = ({
+      modelo_nao_calibrado: 'o modelo ainda não foi calibrado', evidencia_insuficiente: 'evidência insuficiente', so_anexo_sem_texto: 'só há anexos sem texto, que exigem conferência humana',
+    } as Record<string, string>)[report.motivo_nao_avaliavel ?? ''];
+    return reason ? `Não avaliável (${reason})` : 'Não avaliável';
+  }
+
+  isContradicted(claim: FopClaim): boolean {
+    return (claim.relatorio?.resultado ?? claim.verdict) === 'REFUTED';
+  }
+
+  hasContradiction(article: FopArticle): boolean {
+    return article.claims.some((claim) => this.isContradicted(claim));
+  }
+
+  get claimList(): string[] {
+    return this.claims.split('\n').map((value) => value.trim()).filter(Boolean);
+  }
+
+  get claimProblems(): string[] {
+    const claims = this.claimList;
+    const problems = claims.flatMap((claim, index) => claim.length < CLAIM_MIN || claim.length > CLAIM_MAX ? [`A afirmação ${index + 1} tem ${claim.length} caracteres; use entre ${CLAIM_MIN} e ${CLAIM_MAX}.`] : []);
+    if (claims.length > CLAIM_COUNT) problems.push(`Informe até ${CLAIM_COUNT} afirmações (há ${claims.length}).`);
+    return problems;
   }
 
   private async run(task: () => Promise<void>): Promise<void> {
@@ -65,7 +105,11 @@ export class PublisherConsoleComponent implements OnDestroy {
   }
 
   async create(): Promise<void> {
-    const claimList = this.claims.split('\n').map((value) => value.trim()).filter(Boolean);
+    const claimList = this.claimList;
+    if (!claimList.length || this.claimProblems.length) {
+      this.error = this.claimProblems.join(' ') || 'Informe pelo menos uma afirmação factual.';
+      return;
+    }
     await this.run(async () => {
       this.current = await fopApi.create(this.publisherKey, { publisher: this.publisher, title: this.title, summary: this.summary, body: this.body, topic: this.topic, claims: claimList });
       this.articles.unshift(this.current);
@@ -94,7 +138,7 @@ export class PublisherConsoleComponent implements OnDestroy {
     await this.run(async () => {
       await fopApi.verify(this.publisherKey, this.current!.id);
       this.current = await fopApi.publisherArticle(this.publisherKey, this.current!.id);
-      this.message = 'A FOP iniciou a análise. A primeira execução baixa os modelos e pode demorar alguns minutos.';
+      this.message = 'A análise automática começou. A primeira execução baixa os modelos e pode demorar alguns minutos.';
       this.startPolling();
     });
   }
@@ -108,7 +152,8 @@ export class PublisherConsoleComponent implements OnDestroy {
         if (this.current.status !== 'VERIFYING') {
           if (this.pollTimer) clearInterval(this.pollTimer);
           this.pollTimer = undefined;
-          this.message = 'Análise concluída. Consulte os resultados abaixo.';
+          this.message = this.current.status === 'ERROR' ? '' : 'Análise concluída. A notícia aguarda a decisão de um revisor humano.';
+          if (this.current.status === 'ERROR') this.error = this.current.search_errors.join(' ') || 'A análise falhou. Tente novamente.';
         }
       } catch { if (this.pollTimer) clearInterval(this.pollTimer); }
     }, 3000);

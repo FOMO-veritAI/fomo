@@ -1,5 +1,5 @@
 <section class="publisher-console">
-  <div class="console-intro"><div class="eyebrow">PUBLICAÇÃO COM EVIDÊNCIAS</div><h2>Envie uma notícia para a FOP.</h2><p>Cada afirmação factual será analisada separadamente. A publicação só aparece no feed depois da revisão.</p></div>
+  <div class="console-intro"><div class="eyebrow">PUBLICAÇÃO COM EVIDÊNCIAS</div><h2>Envie uma notícia para verificação.</h2><p>Cada afirmação factual passa por análise automática, separadamente. A publicação só aparece no feed depois da aprovação de um revisor humano.</p></div>
   <div class="console-tabs"><button [class.active]="tab === 'publisher'" (click)="tab = 'publisher'">Publisher</button><button [class.active]="tab === 'reviewer'" (click)="tab = 'reviewer'">Revisão</button></div>
   @if (error) { <p class="console-alert error" role="alert">{{ error }}</p> }
   @if (message) { <p class="console-alert success" role="status">{{ message }}</p> }
@@ -12,22 +12,33 @@
       <label>Título<input name="title" [(ngModel)]="title" required minlength="12" placeholder="Título da notícia" /></label>
       <label>Resumo<textarea name="summary" [(ngModel)]="summary" required minlength="20" rows="3" placeholder="O que aconteceu?" ></textarea></label>
       <label>Texto da notícia<textarea name="body" [(ngModel)]="body" required minlength="30" rows="7" placeholder="Texto completo para publicação"></textarea></label>
-      <label>Afirmações a verificar <small>Uma por linha, até oito.</small><textarea name="claims" [(ngModel)]="claims" required rows="4" placeholder="O projeto prevê três parques.&#10;A obra começa em outubro."></textarea></label>
-      <button class="button-primary" type="submit" [disabled]="busy || !publisherKey"><app-icon name="document" /> Criar rascunho</button>
+      <label>Afirmações a verificar <small>Uma por linha, até oito, cada uma com 10 a 500 caracteres.</small><textarea name="claims" [(ngModel)]="claims" required rows="4" placeholder="O projeto prevê três parques.&#10;A obra começa em outubro."></textarea></label>
+      @if (claimProblems.length) { <ul class="console-field-errors" role="alert">@for (problem of claimProblems; track problem) { <li>{{ problem }}</li> }</ul> }
+      <button class="button-primary" type="submit" [disabled]="busy || !publisherKey || !claimList.length || claimProblems.length > 0"><app-icon name="document" /> Criar rascunho</button>
     </form>
     @if (articles.length) {
       <div class="console-list"><h3>Envios</h3>@for (article of articles; track article.id) { <button class="console-list-item" (click)="select(article)"><span><strong>{{ article.title }}</strong><small>{{ article.publisher }} · {{ article.created_at.slice(0, 10) }}</small></span><span class="console-status" [class]="'console-status ' + article.status.toLowerCase()">{{ statusLabel(article.status) }}</span></button> }</div>
     }
     @if (current; as article) {
       <section class="console-detail"><div class="console-detail-head"><div><div class="eyebrow">NOTÍCIA #{{ article.id }}</div><h3>{{ article.title }}</h3></div><span class="console-status" [class]="'console-status ' + article.status.toLowerCase()">{{ statusLabel(article.status) }}</span></div>
+        @if (article.status === 'ERROR') { <p class="console-alert error" role="alert">{{ article.search_errors.join(' ') || 'A análise falhou.' }} A notícia não foi publicada; você pode enviar para análise novamente.</p> }
         @if (article.status === 'DRAFT' || article.status === 'NEEDS_EVIDENCE' || article.status === 'BLOCKED' || article.status === 'ERROR' || article.status === 'REJECTED') {
           <div class="console-attachments"><h4>Acrescentar comprovação</h4><p>Envie uma página pública ou um documento. Imagens são guardadas para revisão humana.</p><div class="console-row"><label>Link da fonte<input type="url" [(ngModel)]="evidenceUrl" placeholder="https://..." /></label><button class="button-secondary" (click)="addUrl()" [disabled]="busy || !evidenceUrl">Adicionar link</button></div><div class="console-row"><label>Documento ou imagem (até 5 MB)<input type="file" accept=".txt,.pdf,.png,.jpg,.jpeg" (change)="chooseFile($event)" /></label><button class="button-secondary" (click)="addFile()" [disabled]="busy || !file">Anexar arquivo</button></div></div>
-          <button class="button-primary" (click)="verify()" [disabled]="busy"><app-icon name="shield" /> Enviar para análise FOP</button>
+          <button class="button-primary" (click)="verify()" [disabled]="busy"><app-icon name="shield" /> Enviar para análise automática</button>
         }
         @if (article.review_note) { <p class="console-review-note"><strong>Revisor:</strong> {{ article.review_note }}</p> }
-        @if (article.attachments.length) { <h4>Fontes enviadas</h4><ul>@for (attachment of article.attachments; track attachment.id) { <li>{{ attachment.source_title }} · {{ attachment.origin === 'manual_attachment' ? 'revisão humana' : 'texto extraído' }}</li> }</ul> }
-        <div class="console-claim-list"><h4>Resultado da verificação FOP</h4>@for (claim of article.claims; track claim.id) { <article class="console-claim" [class]="'console-claim ' + claim.verdict.toLowerCase()"><strong>{{ claim.text }}</strong><p>{{ claim.explanation || 'Aguardando análise.' }}</p><small>Confiança da relação textual: {{ claim.confidence }}</small>@for (source of claim.evidence; track source.id) { <div class="console-source"><span>{{ source.source_title }} · {{ source.origin }}</span><p>“{{ source.excerpt }}”</p>@if (source.source_url) { <a [href]="source.source_url" target="_blank" rel="noopener noreferrer">Abrir fonte</a> }</div> }</article> }</div>
-        @if (article.search_errors.length) { <p class="console-note">Limitações da busca: {{ article.search_errors.join(' · ') }}</p> }
+        @if (article.attachments.length) { <h4>Fontes enviadas</h4><ul>@for (attachment of article.attachments; track attachment.id) { <li>{{ attachment.source_title }} · {{ originLabel(attachment.origin) }}</li> }</ul> }
+        <div class="console-claim-list"><h4>Resultado da verificação, por afirmação</h4>@for (claim of article.claims; track claim.id) {
+          <article class="console-claim" [class.contradicted]="isContradicted(claim)"><strong>{{ claim.text }}</strong>
+            @if (claim.relatorio; as report) {
+              <p>{{ report.texto_publico }}</p><small>{{ percentLabel(report) }} · {{ report.fontes_independentes }} fonte(s) independente(s)</small>
+              @for (source of report.evidencias; track $index) { <div class="console-source"><span>{{ source.fonte }} · {{ source.data_publicacao || 'sem data' }} · {{ relationLabel(source.relacao) }} · {{ originLabel(source.origem) }}</span><p>“{{ source.trecho }}”</p>@if (source.url) { <a [href]="source.url" target="_blank" rel="noopener noreferrer">Abrir fonte</a> }</div> }
+            } @else {
+              <p>{{ claim.texto_publico || claim.explanation || 'Aguardando análise.' }}</p>
+              @for (source of claim.evidence; track source.id) { <div class="console-source"><span>{{ source.source_title }} · {{ originLabel(source.origin) }}</span><p>“{{ source.excerpt }}”</p>@if (source.source_url) { <a [href]="source.source_url" target="_blank" rel="noopener noreferrer">Abrir fonte</a> }</div> }
+            }
+          </article> }</div>
+        @if (article.status !== 'ERROR' && article.search_errors.length) { <p class="console-note">Avisos e limitações da busca: {{ article.search_errors.join(' · ') }}</p> }
       </section>
     }
   }
@@ -37,8 +48,35 @@
     @if (!queue.length) { <p class="console-note">A fila aparecerá aqui após informar a chave e carregar as notícias.</p> }
     @for (article of queue; track article.id) {
       <article class="review-card"><div class="console-detail-head"><div><small>{{ article.publisher }} · #{{ article.id }}</small><h3>{{ article.title }}</h3></div><span class="console-status" [class]="'console-status ' + article.status.toLowerCase()">{{ statusLabel(article.status) }}</span></div><p>{{ article.summary }}</p>
-        @for (claim of article.claims; track claim.id) { <div class="review-claim" [class]="claim.verdict.toLowerCase()"><strong>{{ claim.text }}</strong><span>{{ claim.explanation }}</span>@for (source of claim.evidence; track source.id) { <small>{{ source.source_title }} · {{ relationLabel(source.relation) }} · {{ source.source_domain }}</small>@if (source.source_url) { <a [href]="source.source_url" target="_blank" rel="noopener noreferrer">Abrir fonte</a> } }</div> }
-        @if (article.attachments.length) { <div class="review-attachments"><strong>{{ article.attachments.length }} anexo(s) do publisher</strong>@for (attachment of article.attachments; track attachment.id) { <div>{{ attachment.source_title }} · {{ attachment.origin }} @if (attachment.file_type) { <button (click)="downloadAttachment(attachment)">Baixar para revisar</button> }</div> }</div> }
+        @if (hasContradiction(article)) { <p class="review-contradiction-alert" role="alert"><strong>Atenção:</strong> há afirmação contradita pelas evidências encontradas (em destaque abaixo). Confira as fontes antes de decidir.</p> }
+        @if (article.analise; as analise) {
+          <p class="review-meta">Análise de {{ analise.criado_em.slice(0, 10) }} · data da notícia enviada: {{ analise.data_noticia }} · {{ analise.versoes['modelo'] || analise.modo }}</p>
+          @if (analise.avisos.length) { <div class="review-notices"><strong>Avisos da análise</strong><ul>@for (aviso of analise.avisos; track $index) { <li>{{ aviso }}</li> }</ul></div> }
+        }
+        @for (claim of article.claims; track claim.id) {
+          <div class="review-claim" [class.contradicted]="isContradicted(claim)">
+            @if (isContradicted(claim)) { <em class="review-flag">Afirmação contradita pelas evidências</em> }
+            <strong>{{ claim.text }}</strong>
+            @if (claim.relatorio; as report) {
+              <p class="review-public-text">{{ report.texto_publico }}</p>
+              <dl class="review-facts"><div><dt>Porcentagem</dt><dd>{{ percentLabel(report) }}</dd></div><div><dt>Fontes independentes</dt><dd>{{ report.fontes_independentes }}</dd></div></dl>
+              <p><b>Justificativa:</b> {{ report.justificativa }}</p>
+              @if (report.evidencias.length) {
+                <div class="review-section"><b>Evidências</b>@for (source of report.evidencias; track $index) { <div class="review-source"><span>{{ source.fonte }} · {{ source.data_publicacao || 'sem data' }} · {{ relationLabel(source.relacao) }} · {{ originLabel(source.origem) }}</span><q>{{ source.trecho }}</q>@if (source.url) { <a [href]="source.url" target="_blank" rel="noopener noreferrer">Abrir fonte</a> }</div> }</div>
+              }
+              @if (report.checagens_anteriores.length) {
+                <div class="review-section review-candidates"><b>Checagens candidatas, a conferir</b><small>Encontradas automaticamente. Podem tratar de outro contexto ou período e não são o resultado desta análise.</small>
+                  @for (check of report.checagens_anteriores; track $index) { <div class="review-source"><span>{{ check.agencia }} · {{ check.data || 'sem data' }}</span><span>Alegação checada pela agência: {{ check.alegacao_checada }}</span><span>Classificação original da agência: {{ check.veredito }}</span>@if (check.url) { <a [href]="check.url" target="_blank" rel="noopener noreferrer">Conferir checagem</a> }</div> }
+                </div>
+              }
+              @if (report.limitacoes.length) { <div class="review-section"><b>Limitações</b><ul>@for (item of report.limitacoes; track $index) { <li>{{ item }}</li> }</ul></div> }
+            } @else {
+              <span>{{ claim.explanation }}</span>@for (source of claim.evidence; track source.id) { <small>{{ source.source_title }} · {{ relationLabel(source.relation) }} · {{ source.source_domain }}</small>@if (source.source_url) { <a [href]="source.source_url" target="_blank" rel="noopener noreferrer">Abrir fonte</a> } }
+            }
+          </div>
+        }
+        @if (article.search_errors.length) { <p class="console-note">Avisos e limitações da busca: {{ article.search_errors.join(' · ') }}</p> }
+        @if (article.attachments.length) { <div class="review-attachments"><strong>{{ article.attachments.length }} anexo(s) do publisher</strong>@for (attachment of article.attachments; track attachment.id) { <div>{{ attachment.source_title }} · {{ originLabel(attachment.origin) }} @if (attachment.file_type) { <button (click)="downloadAttachment(attachment)">Baixar para revisar</button> }</div> }</div> }
         <label>Justificativa da decisão<textarea [(ngModel)]="reviewNote" rows="2" minlength="8" placeholder="Explique a decisão para o publisher"></textarea></label>
         <div class="review-actions"><button class="button-primary" (click)="decide(article, 'approve')" [disabled]="busy || reviewNote.trim().length < 8 || (article.status !== 'AWAITING_REVIEW' && !(article.status === 'NEEDS_EVIDENCE' && hasReviewableAttachment(article)))">Aprovar e publicar</button><button class="button-secondary" (click)="decide(article, 'request_evidence')" [disabled]="busy || reviewNote.trim().length < 8">Pedir comprovação</button><button class="button-secondary" (click)="decide(article, 'reject')" [disabled]="busy || reviewNote.trim().length < 8">Devolver</button></div>
       </article>

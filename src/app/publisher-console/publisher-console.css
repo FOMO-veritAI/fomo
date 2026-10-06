@@ -46,3 +46,20 @@
 .review-claim span, .review-claim small { display: block; margin-top: 5px; font-size: 12px; }
 .review-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 @media (max-width: 680px) { .console-key, .console-row { display: block; } .console-detail-head { display: block; } .console-list-item { align-items: flex-start; flex-direction: column; } .publisher-console .button-primary, .publisher-console .button-secondary { width: 100%; justify-content: center; margin-bottom: 7px; } }
+.console-field-errors { margin: 0; padding-left: 18px; color: #aa4b43; font-size: 12px; line-height: 1.5; }
+.console-claim.contradicted, .review-claim.contradicted { border-left: 4px solid #cf675d; background: #fff3f1; }
+.review-contradiction-alert { margin: 10px 0; padding: 10px 12px; border-radius: 5px; background: #fff3f1; border: 1px solid #e8b3ad; color: #8c3b33; font-size: 13px; }
+.review-flag { display: inline-block; margin-bottom: 6px; padding: 2px 7px; border-radius: 4px; background: #cf675d; color: #fff; font-size: 11px; font-style: normal; font-weight: 650; letter-spacing: .3px; }
+.review-meta { font-size: 12px; color: #84947c; }
+.review-notices, .review-section { margin-top: 9px; font-size: 12px; line-height: 1.5; }
+.review-notices ul, .review-section ul { margin: 4px 0 0; padding-left: 18px; }
+.review-public-text { margin: 6px 0; font-size: 13px; font-weight: 600; color: #435943; }
+.review-facts { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 6px 0; font-size: 12px; }
+.review-facts dt { color: #84947c; }
+.review-facts dd { margin: 0; font-weight: 650; }
+.review-claim p { font-size: 12px; line-height: 1.5; margin: 6px 0; }
+.review-source { margin-top: 6px; padding: 7px 9px; border: 1px solid #e3e9dc; border-radius: 4px; background: #fff; }
+.review-source span, .review-source q { display: block; margin-top: 2px; }
+.review-source q { color: #657462; }
+.review-candidates { padding: 8px; border: 1px dashed #c9b27d; border-radius: 5px; background: #fffbf0; }
+.review-candidates small { display: block; color: #8a7340; }
