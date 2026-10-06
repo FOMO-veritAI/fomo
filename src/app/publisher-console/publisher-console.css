@@ -1,65 +1,86 @@
-.publisher-console { margin: 22px 0 60px; color: #40543f; }
-.console-intro { border-radius: 13px; padding: 28px; background: #eaf3e2; }
-.console-intro h2 { font: 500 32px/1.1 var(--serif); margin: 9px 0; }
-.console-intro p { font-size: 14px; line-height: 1.6; color: #657761; }
-.console-tabs { display: flex; gap: 8px; margin: 22px 0; border-bottom: 1px solid #dae5d4; }
-.console-tabs button { padding: 10px 17px; font-weight: 650; color: #70836b; }
-.console-tabs button.active { color: #154e42; border-bottom: 2px solid #154e42; }
+/* Área do publisher e da revisão. Moldura FOMO (pop-art) por fora; relatório VeritAI (sóbrio, sem cor) por dentro.
+   Resultados e destaques nunca usam vermelho nem verde: só ícone, texto e peso de borda. */
+.publisher-console { margin: 22px 0 60px; color: #000; }
+.console-intro { padding: 26px 28px; background: #000; color: #f0f0f0; border: 3px solid #000; box-shadow: 6px 6px 0 var(--accent); }
+.console-intro .eyebrow { color: #f0f0f0; }
+.console-intro h2 { font-family: var(--display); font-weight: 400; font-size: 40px; line-height: 1; letter-spacing: 1.2px; margin: 9px 0; color: #f0f0f0; }
+.console-intro p { font-size: 14px; line-height: 1.6; color: #f0f0f0; }
+.console-tabs { display: flex; gap: 8px; margin: 22px 0; border-bottom: 3px solid #000; }
+.console-tabs button { padding: 10px 17px; font-family: var(--display); font-size: 22px; letter-spacing: 1px; color: #000; border: 3px solid transparent; border-bottom: 0; margin-bottom: -3px; }
+.console-tabs button.active { background: #000; color: #f0f0f0; border-color: #000; }
 .console-key, .console-row { display: flex; align-items: flex-end; gap: 12px; }
 .console-key { margin-bottom: 20px; }
 .console-key label, .console-row label { flex: 1; }
-.console-form, .console-detail, .review-card, .console-list { background: #fff; border: 1px solid #dfe8d9; border-radius: 11px; padding: 22px; margin: 20px 0; }
-.console-form h3, .console-list h3, .console-detail h3, .review-card h3 { font: 700 18px var(--heading); margin: 0 0 17px; }
-.publisher-console label { display: block; font-size: 12px; font-weight: 700; color: #5e735a; margin: 0 0 14px; }
-.publisher-console label small { font-weight: 400; color: #899884; }
-.publisher-console input, .publisher-console textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; border: 1px solid #d9e5d3; border-radius: 7px; padding: 11px 12px; font: 400 13px var(--body); color: #40543f; background: #fcfdfb; }
-.publisher-console input:focus, .publisher-console textarea:focus { outline: 2px solid #a9c598; }
+.console-form, .console-detail, .review-card, .console-list { background: #fff; border: 3px solid #000; box-shadow: 6px 6px 0 #000; padding: 22px; margin: 20px 0 28px; }
+.console-form h3, .console-list h3, .console-detail h3, .review-card h3 { font-family: var(--font); font-weight: 800; font-size: 20px; line-height: 1.25; margin: 0 0 17px; color: #000; }
+.console-form > h3, .console-list > h3 { font-family: var(--display); font-weight: 400; font-size: 28px; letter-spacing: 1px; }
+.publisher-console label { display: block; font-size: 13px; font-weight: 700; color: #000; margin: 0 0 14px; }
+.publisher-console label small { font-weight: 500; color: #444; }
+.publisher-console input, .publisher-console textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; border: 2px solid #000; border-radius: 0; padding: 11px 12px; font: 400 14px var(--font); color: #000; background: #fff; }
+.publisher-console input:focus-visible, .publisher-console textarea:focus-visible { outline: 3px solid #000; outline-offset: 2px; box-shadow: 0 0 0 5px #fff; }
 .publisher-console .button-primary, .publisher-console .button-secondary { white-space: nowrap; }
-.publisher-console button:disabled { opacity: .5; cursor: not-allowed; }
-.console-alert { border-radius: 7px; padding: 11px 13px; margin: 14px 0; font-size: 13px; }
-.console-alert.error { background: #fff0ed; color: #a5473e; }
-.console-alert.success { background: #edf6e9; color: #3f7149; }
-.console-list-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left; padding: 12px 0; border-top: 1px solid #edf0e9; }
+.publisher-console button:disabled { cursor: not-allowed; }
+.console-alert { padding: 11px 13px; margin: 14px 0; font-size: 14px; font-weight: 600; color: #000; background: #fff; border: 2px solid #000; }
+.console-alert.error { border-width: 3px; border-left-width: 10px; }
+.console-alert.success { border-style: solid; }
+.console-list-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left; padding: 12px 6px; border-top: 1px solid #000; }
+.console-list-item:hover { background: #f0f0f0; }
 .console-list-item strong, .console-list-item small { display: block; }
-.console-list-item strong { font-size: 13px; color: #40543f; }
-.console-list-item small { margin-top: 4px; color: #8d9b87; }
-.console-status { display: inline-block; border-radius: 5px; background: #edf2e8; color: #5b7853; padding: 5px 8px; font-size: 11px; font-weight: 700; white-space: nowrap; }
-.console-status.needs_evidence, .console-status.awaiting_review { background: #fff5df; color: #9a6b26; }
-.console-status.blocked, .console-status.rejected, .console-status.error { background: #fff0ed; color: #b44d44; }
-.console-status.published { background: #e4f3e4; color: #347146; }
+.console-list-item strong { font-size: 14px; color: #000; }
+.console-list-item small { margin-top: 4px; color: #444; }
+/* Status sem cor: o texto diz o estado; o estilo só reforça (publicada = invertido, erro = tracejado). */
+.console-status { display: inline-block; background: #fff; color: #000; border: 2px solid #000; padding: 4px 8px; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.console-status.published { background: #000; color: #f0f0f0; }
+.console-status.error, .console-status.blocked { border-style: dashed; }
 .console-detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .console-detail-head h3 { margin-top: 6px; }
-.console-detail h4 { margin: 18px 0 8px; }
-.console-attachments { border: 1px solid #dfebd8; border-radius: 8px; background: #f7faf4; padding: 16px; margin: 12px 0; }
-.console-attachments p, .console-note, .console-review-note { font-size: 12px; line-height: 1.5; color: #75846f; }
-.console-claim { border-left: 3px solid #e7b768; background: #fcfaf5; padding: 13px; margin: 9px 0; border-radius: 4px; }
-.console-claim.supported { border-color: #69a76c; background: #f4faf2; }
-.console-claim.refuted { border-color: #cf6b61; background: #fff5f3; }
-.console-claim.conflicting_evidence { border-color: #ce9062; }
-.console-claim strong, .review-claim strong { font-size: 13px; }
-.console-claim p { font-size: 13px; line-height: 1.5; margin: 7px 0; }
-.console-claim small { color: #84947c; }
-.console-source { margin: 12px 0 0; border-top: 1px solid #dfebd8; padding-top: 9px; font-size: 12px; }
-.console-source a, .review-claim a { color: #236d5a; text-decoration: underline; }
-.review-card > p { color: #718268; font-size: 13px; line-height: 1.5; }
-.review-claim { margin: 10px 0; padding: 11px; border-radius: 5px; background: #f7f9f4; }
-.review-claim span, .review-claim small { display: block; margin-top: 5px; font-size: 12px; }
-.review-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-@media (max-width: 680px) { .console-key, .console-row { display: block; } .console-detail-head { display: block; } .console-list-item { align-items: flex-start; flex-direction: column; } .publisher-console .button-primary, .publisher-console .button-secondary { width: 100%; justify-content: center; margin-bottom: 7px; } }
-.console-field-errors { margin: 0; padding-left: 18px; color: #aa4b43; font-size: 12px; line-height: 1.5; }
-.console-claim.contradicted, .review-claim.contradicted { border-left: 4px solid #cf675d; background: #fff3f1; }
-.review-contradiction-alert { margin: 10px 0; padding: 10px 12px; border-radius: 5px; background: #fff3f1; border: 1px solid #e8b3ad; color: #8c3b33; font-size: 13px; }
-.review-flag { display: inline-block; margin-bottom: 6px; padding: 2px 7px; border-radius: 4px; background: #cf675d; color: #fff; font-size: 11px; font-style: normal; font-weight: 650; letter-spacing: .3px; }
-.review-meta { font-size: 12px; color: #84947c; }
-.review-notices, .review-section { margin-top: 9px; font-size: 12px; line-height: 1.5; }
+.console-detail-head small { color: #444; font-weight: 600; }
+.console-detail h4, .console-section-title { margin: 18px 0 8px; font-size: 15px; font-weight: 800; color: #000; }
+.console-attachments { border: 2px dashed #000; background: #fff; padding: 16px; margin: 12px 0; }
+.console-attachments p, .console-note, .console-review-note { font-size: 13px; line-height: 1.5; color: #333; }
+.console-claim { border: 1px solid #000; border-left-width: 4px; background: #fff; padding: 13px; margin: 9px 0; }
+.console-claim strong, .review-claim > strong { display: block; font-size: 15px; line-height: 1.4; color: #000; }
+.console-claim p { font-size: 14px; line-height: 1.5; margin: 7px 0; }
+.console-claim small { color: #444; }
+.console-source { margin: 12px 0 0; border-top: 1px solid #000; padding-top: 9px; font-size: 13px; }
+.console-source a, .review-claim a { color: #000; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.review-card > p { color: #333; font-size: 14px; line-height: 1.5; }
+.review-claim { margin: 0; padding: 16px 0; border-bottom: 1px solid #000; background: #fff; }
+.review-claim:last-of-type { border-bottom: 0; }
+.review-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+@media (max-width: 680px) {
+  .console-key, .console-row { display: block; }
+  .console-detail-head { display: block; }
+  .console-detail-head .console-status { margin-top: 8px; }
+  .console-list-item { align-items: flex-start; flex-direction: column; }
+  .publisher-console .button-primary, .publisher-console .button-secondary { width: 100%; justify-content: center; margin-bottom: 7px; white-space: normal; }
+  .console-form, .console-detail, .review-card, .console-list { padding: 16px; box-shadow: 4px 4px 0 #000; }
+  .console-intro h2 { font-size: 32px; }
+  .review-source { overflow-wrap: anywhere; }
+}
+.console-field-errors { margin: 0 0 14px; padding-left: 18px; color: #000; font-weight: 600; font-size: 13px; line-height: 1.5; }
+/* Afirmação contradita: destaque por peso e inversão, nunca por cor. */
+.console-claim.contradicted { border: 3px solid #000; border-left-width: 10px; }
+.review-claim.contradicted { margin: 6px -10px; padding: 16px 12px; border: 3px solid #000; border-left-width: 10px; }
+.review-card > .review-contradiction-alert { margin: 12px 0; padding: 10px 12px; background: #000; color: #fff; font-size: 14px; line-height: 1.5; }
+.review-contradiction-alert strong { text-transform: uppercase; letter-spacing: .5px; }
+.review-flag { display: inline-block; margin-bottom: 8px; padding: 3px 8px; background: #000; color: #fff; font-size: 11px; font-style: normal; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; }
+.review-meta { font-size: 13px; color: #444; margin: 8px 0 4px; }
+.review-notices, .review-section { margin-top: 10px; font-size: 13px; line-height: 1.5; }
+.review-section > b { display: block; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #000; }
 .review-notices ul, .review-section ul { margin: 4px 0 0; padding-left: 18px; }
-.review-public-text { margin: 6px 0; font-size: 13px; font-weight: 600; color: #435943; }
-.review-facts { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 6px 0; font-size: 12px; }
-.review-facts dt { color: #84947c; }
-.review-facts dd { margin: 0; font-weight: 650; }
-.review-claim p { font-size: 12px; line-height: 1.5; margin: 6px 0; }
-.review-source { margin-top: 6px; padding: 7px 9px; border: 1px solid #e3e9dc; border-radius: 4px; background: #fff; }
-.review-source span, .review-source q { display: block; margin-top: 2px; }
-.review-source q { color: #657462; }
-.review-candidates { padding: 8px; border: 1px dashed #c9b27d; border-radius: 5px; background: #fffbf0; }
-.review-candidates small { display: block; color: #8a7340; }
+.review-public-text { margin: 8px 0; padding-left: 12px; border-left: 3px solid #000; font-size: 14px; font-weight: 600; color: #000; }
+.review-facts { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 8px 0; font-size: 13px; }
+.review-facts dt { color: #444; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+.review-facts dd { margin: 0; font-weight: 700; }
+.review-claim p { font-size: 14px; line-height: 1.5; margin: 6px 0; }
+.review-claim > span { display: block; font-size: 14px; margin-top: 5px; }
+.review-claim > small { display: block; font-size: 13px; margin-top: 5px; color: #333; }
+.review-claim .result-tag { display: flex; }
+.review-source { margin-top: 6px; padding: 8px 10px; border: 1px solid #000; background: #fff; font-size: 13px; }
+.review-source > span, .review-source q { display: block; margin-top: 2px; }
+.review-source q { color: #333; }
+.review-candidates { padding: 10px; border: 2px dashed #000; background: #fff; }
+.review-candidates small { display: block; color: #333; margin: 2px 0 4px; }
+.review-attachments { margin: 14px 0; padding: 12px; border: 2px dashed #000; font-size: 13px; }
+.review-attachments button { margin-left: 6px; font-weight: 800; text-decoration: underline; }

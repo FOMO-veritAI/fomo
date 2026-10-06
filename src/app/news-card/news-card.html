@@ -5,6 +5,7 @@
       <span class="publisher-name">{{ article.publisher }} <app-icon name="verified" className="verified-icon" /></span>
       <span class="publisher-meta">{{ article.time }} · {{ article.topic }}</span>
     </div>
+    <span class="fiction-badge">Exemplo fictício</span>
     @if (rank) { <span class="rank-pill"><app-icon name="fire" /> Em alta</span> }
     <button class="more-button icon-button" (click)="more.emit(article.id)" aria-label="Opções da notícia"><app-icon name="more" /></button>
   </div>
@@ -24,7 +25,7 @@
     <p class="card-summary">{{ article.summary }}</p>
     <app-audio-player [article]="article" [compact]="true" [playing]="audioPlaying" (togglePlay)="toggleAudio.emit($event)" (showInfo)="audioInfo.emit($event)" (playExpert)="expertAudio.emit($event)" />
     <div class="evidence-strip">
-      <span class="evidence-state"><app-icon name="shield" /> Exemplo visual da <b>FOP</b><span class="dot-separator">·</span><span class="evidence-detail">fontes fictícias</span></span>
+      <span class="evidence-state"><app-icon name="shield" /> Exemplo visual <b>fictício</b><span class="dot-separator">·</span><span class="evidence-detail">fontes fictícias</span></span>
       <button class="evidence-link" (click)="openEvidence.emit(article.id)">Ver evidências <app-icon name="chevron" /></button>
     </div>
     <div class="card-actions">
@@ -35,7 +36,7 @@
     </div>
   </div>
   <div class="mini-discussion">
-    <div class="discussion-caption"><div class="avatar-stack"><span class="avatar" style="background:#e5cdb5">MC</span><span class="avatar" style="background:#cbd5b9">RL</span><span class="avatar" style="background:#e3d4da">LM</span></div><span><strong>{{ article.voices }} olhares</strong> sobre esta notícia</span></div>
+    <div class="discussion-caption"><div class="avatar-stack"><span class="avatar" style="background:#d1d1d1">MC</span><span class="avatar" style="background:#d1d1d1">RL</span><span class="avatar" style="background:#d8d8d8">LM</span></div><span><strong>{{ article.voices }} olhares</strong> sobre esta notícia</span></div>
     <button class="discussion-button" (click)="viewReactions.emit(article.id)">Ver reactions <app-icon name="arrow" /></button>
   </div>
 </article>

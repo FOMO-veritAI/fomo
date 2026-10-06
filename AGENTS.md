@@ -44,6 +44,14 @@ Planejado: identidade institucional de publishers e revisores, isolamento entre 
 - Imagens e documentos sem texto não são avaliados pela IA: exigem conferência humana, e a notícia pública indica essa condição (`anexo_sem_texto`) sempre que houver um, qualquer que seja o resultado das afirmações.
 - As notícias de "Exemplos visuais" são fictícias e não podem servir de evidência nem de dado de treino.
 
+### Identidade visual
+
+- **FOMO** (cabeçalho, feed, notícia, publisher): pop-art/quadrinhos. Preto `#000`, off-white `#F0F0F0`, vermelho `#FF3333` só em destaque (marca, botão principal, ícones, títulos grandes). Vermelho nunca em texto pequeno; botão vermelho tem texto **preto** (5,8:1). Bangers só em marca e destaques; manchetes e texto em Inter.
+- **VeritAI** (bloco do leitor e relatório do revisor): preto sobre branco, sem cor, moldura fina; "*Verit*" em Newsreader itálico + "**AI**" em Inter 900 (`app-veritai-mark`), legenda "(IN FOMO)".
+- Resultados (apoiam, contradizem, insuficientes, conclusões diferentes) nunca usam vermelho nem verde: só ícone + texto. O vermelho da marca não pode significar "falso".
+- Logos: originais em `public/brand/` (não alterar); versões recortadas em `public/brand/web/`, sempre como imagem com `alt`. Monograma FM! é o favicon.
+- Acessibilidade: texto com contraste mínimo de 4,5:1, foco visível (contorno preto + anel branco), sem rolagem horizontal em 360 px. Tokens em `src/styles.css` (`:root`) e camada da marca em `src/brand.css`.
+
 ## Contrato com a VeritAI
 
 O contrato é `veritai/relatorio.py` no repositório veritai. A cópia usada aqui está em `backend/app/veritai_contrato.py`, com o commit de origem no cabeçalho; atualize as duas juntas. Não assuma campos que não estejam no contrato. O FOMO valida o pedido antes de enviar (afirmações de 10 a 500 caracteres, URLs http(s) com domínio válido, limites de quantidade) e valida a resposta ao receber.

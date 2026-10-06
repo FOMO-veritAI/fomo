@@ -1,5 +1,5 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { Component, ElementRef, HostListener, inject, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, HostListener, inject, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AUDIO, ARTICLES, COMMUNITIES, CRITIQUES, VIDEO_CLIPS } from './data';
 import { Article, CommentItem, Community, Critique, ViewName } from './models';
@@ -7,6 +7,8 @@ import { IconComponent } from './icon/icon';
 import { NewsCardComponent } from './news-card/news-card';
 import { AudioPlayerComponent } from './audio-player/audio-player';
 import { FopPublicArticle, fopApi } from './fop-api';
+import { VeritaiMarkComponent } from './veritai-mark/veritai-mark';
+import { RELACAO, RESULTADO } from './veritai-mark/veritai-icones';
 import { PublisherConsoleComponent } from './publisher-console/publisher-console';
 
 type PanelKind = 'evidence' | 'article' | 'comments' | 'compose' | 'how' | 'video' | 'record' | 'message' | 'liveEvidence' | null;
@@ -14,12 +16,14 @@ type PanelKind = 'evidence' | 'article' | 'comments' | 'compose' | 'how' | 'vide
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent, NewsCardComponent, AudioPlayerComponent, PublisherConsoleComponent],
+  imports: [CommonModule, FormsModule, IconComponent, NewsCardComponent, AudioPlayerComponent, PublisherConsoleComponent, VeritaiMarkComponent],
   styleUrl: './app.css',
   templateUrl: './app.html',
 })
 export class App implements OnInit {
   private readonly document = inject(DOCUMENT);
+  // O app roda sem zone.js: respostas assíncronas e timers precisam pedir nova renderização.
+  private readonly changes = inject(ChangeDetectorRef);
   @ViewChild('globalSearch') globalSearch?: ElementRef<HTMLInputElement>;
 
   readonly articles = ARTICLES;
@@ -30,6 +34,10 @@ export class App implements OnInit {
   readonly topics = ['Todos', 'Sociedade', 'Tecnologia', 'Ciência', 'Cultura', 'Planeta'];
   readonly filters = ['Todas', 'Em texto', 'Em vídeo'];
   publicArticles: FopPublicArticle[] = [];
+  readonly resultados = Object.values(RESULTADO);
+  readonly apoia = RELACAO['apoia'];
+  // Data do dia no fuso de São Paulo, como "TERÇA-FEIRA, 6 DE OUTUBRO".
+  readonly hoje = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Sao_Paulo' }).format(new Date()).toUpperCase();
   liveArticle: FopPublicArticle | null = null;
   readonly nav: { id: ViewName; icon: string; label: string }[] = [
     { id: 'news', icon: 'news', label: 'Notícias' },
@@ -74,6 +82,7 @@ export class App implements OnInit {
   async refreshPublished(): Promise<void> {
     try { this.publicArticles = await fopApi.published(); }
     catch { this.publicArticles = []; }
+    this.changes.markForCheck();
   }
 
   openLiveEvidence(article: FopPublicArticle): void {
@@ -94,7 +103,7 @@ export class App implements OnInit {
       popular: ['O que move', 'a conversa de hoje.', 'Notícias e perspectivas que estão fazendo a comunidade pensar.'],
       saved: ['Boas leituras,', 'no seu tempo.', 'Seu espaço para voltar às notícias que merecem outro olhar.'],
       profile: ['Seu espaço.', 'Sua perspectiva.', 'As conversas que você acompanha e as ideias que compartilha.'],
-      publisher: ['Sua notícia.', 'Com fontes à vista.', 'Envie afirmações e evidências para a análise FOP antes da publicação.'],
+      publisher: ['Sua notícia.', 'Com fontes à vista.', 'Envie afirmações e evidências para análise automática antes da publicação.'],
     };
     return copy[this.view];
   }
@@ -227,7 +236,7 @@ export class App implements OnInit {
   addComment(): void {
     if (!this.panelArticleId || !this.commentDraft.trim()) return;
     const list = this.comments[this.panelArticleId] ?? [];
-    this.comments[this.panelArticleId] = [...list, { name: 'Charles', initials: 'CH', color: '#eadfd3', text: this.commentDraft.trim(), likes: 0 }];
+    this.comments[this.panelArticleId] = [...list, { name: 'Charles', initials: 'CH', color: '#e1e1e1', text: this.commentDraft.trim(), likes: 0 }];
     this.commentDraft = '';
     this.toast('Comentário adicionado à demonstração.');
   }
@@ -235,7 +244,7 @@ export class App implements OnInit {
   publishCritique(): void {
     if (!this.panelArticleId || !this.critiqueDraft.trim()) return;
     const text = this.critiqueDraft.trim();
-    this.ownCritiques.unshift({ id: `own-${Date.now()}`, article: this.panelArticleId, name: 'Charles', initials: 'CH', role: 'Seu ponto de vista', color: '#eadfd3', type: 'text', text: text.length > 95 ? `${text.slice(0, 95)}…` : text, body: text.length > 95 ? text : '', likes: 0, comments: 0, time: 'Agora' });
+    this.ownCritiques.unshift({ id: `own-${Date.now()}`, article: this.panelArticleId, name: 'Charles', initials: 'CH', role: 'Seu ponto de vista', color: '#e1e1e1', type: 'text', text: text.length > 95 ? `${text.slice(0, 95)}…` : text, body: text.length > 95 ? text : '', likes: 0, comments: 0, time: 'Agora' });
     this.closePanel();
     this.view = 'reactions';
     this.toast('Sua reaction foi adicionada à demonstração.');
@@ -260,8 +269,8 @@ export class App implements OnInit {
 
   commentsFor(id: number): CommentItem[] {
     const defaults: CommentItem[] = [
-      { name: 'Marina Costa', initials: 'MC', color: '#e5cdb5', text: id === 1 ? 'Gostei de ver a consulta pública entre as evidências. Quero entender como os bairros vão participar dessa decisão.' : 'O ponto principal para mim é saber como as pessoas vão participar. A proposta abre uma boa conversa.', likes: 18 },
-      { name: 'João Pedro', initials: 'JP', color: '#c8d7dc', text: 'A notícia traz a proposta, mas acompanhar a execução vai ser tão importante quanto o anúncio.', likes: 12 },
+      { name: 'Marina Costa', initials: 'MC', color: '#d1d1d1', text: id === 1 ? 'Gostei de ver a consulta pública entre as evidências. Quero entender como os bairros vão participar dessa decisão.' : 'O ponto principal para mim é saber como as pessoas vão participar. A proposta abre uma boa conversa.', likes: 18 },
+      { name: 'João Pedro', initials: 'JP', color: '#d4d4d4', text: 'A notícia traz a proposta, mas acompanhar a execução vai ser tão importante quanto o anúncio.', likes: 12 },
     ];
     return [...defaults, ...(this.comments[id] ?? [])];
   }
@@ -275,7 +284,7 @@ export class App implements OnInit {
   toast(message: string): void {
     this.toastMessage = message;
     clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => (this.toastMessage = ''), 3300);
+    this.toastTimer = setTimeout(() => { this.toastMessage = ''; this.changes.markForCheck(); }, 3300);
   }
 
   @HostListener('document:keydown', ['$event'])

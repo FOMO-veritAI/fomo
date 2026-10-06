@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnDestroy, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, inject, OnDestroy, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { fopApi, FopArticle, FopClaim, FopEvidence, FopStatus, VeritaiRelatorioAfirmacao } from '../fop-api';
 
@@ -7,11 +7,13 @@ const CLAIM_MIN = 10;
 const CLAIM_MAX = 500;
 const CLAIM_COUNT = 8;
 import { IconComponent } from '../icon/icon';
+import { VeritaiMarkComponent } from '../veritai-mark/veritai-mark';
+import { RELACAO, RESULTADO, SEM_RESULTADO } from '../veritai-mark/veritai-icones';
 
 @Component({
   selector: 'app-publisher-console',
   standalone: true,
-  imports: [FormsModule, IconComponent],
+  imports: [FormsModule, IconComponent, VeritaiMarkComponent],
   templateUrl: './publisher-console.html',
   styleUrl: './publisher-console.css',
 })
@@ -37,6 +39,8 @@ export class PublisherConsoleComponent implements OnDestroy {
   error = '';
   message = '';
   private pollTimer?: ReturnType<typeof setInterval>;
+  // O app roda sem zone.js: respostas assíncronas precisam pedir nova renderização.
+  private readonly changes = inject(ChangeDetectorRef);
 
   ngOnDestroy(): void { if (this.pollTimer) clearInterval(this.pollTimer); }
 
@@ -53,7 +57,16 @@ export class PublisherConsoleComponent implements OnDestroy {
   }
 
   relationLabel(relation: string): string {
-    return ({ apoia: 'Apoia', contradiz: 'Contradiz', neutro: 'Neutra', entailment: 'Apoia', contradiction: 'Contradiz', neutral: 'Neutra' } as Record<string, string>)[relation] ?? 'Neutra';
+    return (RELACAO[relation] ?? RELACAO['neutro']).text;
+  }
+
+  // Resultados e relações sem cor: ícone + texto, com a mesma tabela em todo o app (veritai-icones.ts).
+  resultInfo(result: string): { icon: string; text: string } {
+    return RESULTADO[result] ?? SEM_RESULTADO;
+  }
+
+  relationIcon(relation: string): string {
+    return (RELACAO[relation] ?? RELACAO['neutro']).icon;
   }
 
   originLabel(origin: string): string {
@@ -97,7 +110,7 @@ export class PublisherConsoleComponent implements OnDestroy {
     this.message = '';
     try { await task(); }
     catch (error) { this.error = error instanceof Error ? error.message : 'Não foi possível concluir a operação.'; }
-    finally { this.busy = false; }
+    finally { this.busy = false; this.changes.markForCheck(); }
   }
 
   async loadPublisher(): Promise<void> {
@@ -156,6 +169,7 @@ export class PublisherConsoleComponent implements OnDestroy {
           if (this.current.status === 'ERROR') this.error = this.current.search_errors.join(' ') || 'A análise falhou. Tente novamente.';
         }
       } catch { if (this.pollTimer) clearInterval(this.pollTimer); }
+      this.changes.markForCheck();
     }, 3000);
   }
 

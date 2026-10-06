@@ -5,7 +5,7 @@
   grid-template-columns: 36px 1fr;
   gap: 14px;
   align-items: start;
-  color: #66765f;
+  color: #6c6c6c;
   line-height: 1.65;
   padding: 20px 0;
 }
@@ -16,20 +16,15 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #eef5e9;
-  color: #5d8152;
+  background: #f3f3f3;
+  color: #6c6c6c;
 }
 
 .message-panel app-icon svg { width: 18px; height: 18px; }
 
-.publisher-shortcut { color: #547653; }
+.publisher-shortcut { color: #6c6c6c; }
 .live-heading { margin-top: 25px; }
-.live-news-card { border-color: #aacb9c; }
+.live-news-card { border-color: #000; }
 .live-news-card .card-content { padding-bottom: 14px; }
-.live-body { white-space: pre-wrap; line-height: 1.7; color: #657462; }
-.live-claim { margin: 13px 0; padding: 16px; background: #f7f9f4; border-left: 4px solid #a9bf9c; border-radius: 6px; }
-.live-claim strong { display: block; color: #435943; }
-.live-claim p { line-height: 1.55; margin: 8px 0; }
-.live-claim small { color: #84947c; }
-.live-claim .source-card { margin-top: 12px; }
-.live-claim .source-card a { color: #236d5a; text-decoration: underline; }
+.live-body { white-space: pre-wrap; line-height: 1.7; color: #222; }
+/* As afirmações do leitor usam o bloco VeritAI (brand.css: .veritai-claim). */

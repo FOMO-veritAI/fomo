@@ -1,7 +1,7 @@
 <div class="app-shell">
   <aside class="sidebar">
-    <button class="brand" (click)="navigate('news')" aria-label="TAKTA, início">takta<span class="brand-dot"></span></button>
-    <p class="brand-tagline">Fatos conectam. Conversas movem.</p>
+    <button class="brand" (click)="navigate('news')" aria-label="FOMO!, ir para o início"><img src="brand/web/fomo-logo.png" alt="FOMO!" width="720" height="484" /></button>
+    <p class="brand-tagline">Fear of Missing Objectivity.</p>
     <nav class="navigation" aria-label="Menu principal">
       @for (item of nav; track item.id; let index = $index) {
         @if (index === 3) { <div class="nav-divider"></div><div class="nav-label">SEU ESPAÇO</div> }
@@ -14,13 +14,13 @@
     </nav>
     <div class="sidebar-bottom">
       <div class="sidebar-manifest"><app-icon name="spark" className="little-spark" /><p>Fatos primeiro.<br><em>Sua visão depois.</em></p></div>
-      <div class="sidebar-foot">Uma conversa com base. <b>FOP</b><app-icon name="shield" className="verified-icon" /></div>
+      <div class="sidebar-foot">Verificação por afirmação <app-veritai-mark /></div>
     </div>
   </aside>
 
   <div class="workspace">
     <header class="topbar">
-      <div class="topbar-title"><span class="desktop-title">{{ currentNavLabel }}</span><span class="mobile-brand">takta</span><span class="topbar-divider"></span><span class="topbar-note">Seu olhar faz parte.</span></div>
+      <div class="topbar-title"><span class="desktop-title">{{ currentNavLabel }}</span><span class="mobile-brand"><img src="brand/web/fm-192.png" alt="FOMO!" width="192" height="192" /></span><span class="topbar-divider"></span><span class="topbar-note">Seu olhar faz parte.</span></div>
       <div class="header-tools">
         <label class="search-wrap"><app-icon name="search" /><input #globalSearch type="search" placeholder="O que você quer explorar?" aria-label="Buscar notícias" [(ngModel)]="query" (focus)="view = 'news'" /><kbd>/</kbd></label>
         <button class="icon-button publisher-shortcut" (click)="navigate('publisher')" aria-label="Área do publisher"><app-icon name="building" /></button>
@@ -32,7 +32,7 @@
     <div class="content-grid">
       <main class="main-column" id="main-content">
         <section class="greeting">
-          <div class="greeting-meta"><app-icon name="sun" /> TERÇA-FEIRA, 22 DE SETEMBRO</div>
+          <div class="greeting-meta"><app-icon name="sun" /> {{ hoje }}</div>
           <h1>{{ greeting[0] }}<br><span>{{ greeting[1] }}</span></h1>
           <p>{{ greeting[2] }}</p>
           @if (view !== 'publisher') { <div class="mobile-demo">Protótipo visual · conteúdo fictício</div> }
@@ -40,15 +40,17 @@
 
         @if (view === 'news') {
           @if (publicArticles.length) {
-            <div class="view-section-label live-heading">Notícias publicadas <span>Verificação automática e revisão humana</span></div>
+            <h2 class="view-section-label live-heading">Notícias publicadas <span>Verificadas por afirmação e aprovadas por um revisor humano</span></h2>
             @for (article of publicArticles; track article.id) {
-              <article class="news-card live-news-card"><div class="card-publisher"><span class="publisher-logo">{{ article.publisher.slice(0, 1).toUpperCase() }}</span><div class="publisher-details"><span class="publisher-name">{{ article.publisher }}</span><span class="publisher-meta">{{ article.created_at.slice(0, 10) }} · {{ article.topic }}</span></div></div><div class="card-content"><button class="headline-button" (click)="openLiveEvidence(article)"><h2>{{ article.title }}</h2></button><p class="card-summary">{{ article.summary }}</p><div class="evidence-strip"><span class="evidence-state"><app-icon name="shield" /> @if (article.verificado_pela_veritai) { Verificação <b>VeritAI</b> } @else { Verificação automática anterior }<span class="dot-separator">·</span><span class="evidence-detail">{{ article.claims.length }} {{ article.claims.length === 1 ? 'afirmação verificada' : 'afirmações verificadas' }}</span></span><button class="evidence-link" (click)="openLiveEvidence(article)">Ver resultado por afirmação <app-icon name="chevron" /></button></div></div></article>
+              <article class="news-card live-news-card"><div class="card-publisher"><span class="publisher-logo">{{ article.publisher.slice(0, 1).toUpperCase() }}</span><div class="publisher-details"><span class="publisher-name">{{ article.publisher }}</span><span class="publisher-meta">{{ article.created_at.slice(0, 10) }} · {{ article.topic }}</span></div></div><div class="card-content"><button class="headline-button" (click)="openLiveEvidence(article)"><h2>{{ article.title }}</h2></button><p class="card-summary">{{ article.summary }}</p><div class="evidence-strip"><span class="evidence-state">@if (article.verificado_pela_veritai) { <span class="sr-only">Verificação </span><app-veritai-mark /> } @else { <app-icon name="shield" /> Verificação automática anterior }<span class="dot-separator">·</span><span class="evidence-detail">{{ article.claims.length }} {{ article.claims.length === 1 ? 'afirmação verificada' : 'afirmações verificadas' }}</span></span><button class="evidence-link" (click)="openLiveEvidence(article)">Ver resultado por afirmação <app-icon name="chevron" /></button></div></div></article>
             }
           }
-          <div class="view-section-label">Exemplos visuais <span>Notícias fictícias do protótipo</span></div>
-          <div class="feed-tabs" role="tablist" aria-label="Origem das notícias">
+          <h2 class="view-section-label">Exemplos visuais <span>Notícias fictícias do protótipo</span></h2>
+          <div class="feed-tabs">
+            <div class="feed-tab-list" role="tablist" aria-label="Origem das notícias">
             <button class="feed-tab" [class.active]="tab === 'for-you'" (click)="tab = 'for-you'" role="tab" [attr.aria-selected]="tab === 'for-you'">Para você</button>
             <button class="feed-tab" [class.active]="tab === 'following'" (click)="tab = 'following'" role="tab" [attr.aria-selected]="tab === 'following'">Seguindo</button>
+            </div>
             <button class="feed-settings" (click)="openMessage('Sobre o feed', 'A seleção é demonstrativa. No produto, relevância, atualidade, confiabilidade e diversidade formarão o feed.')" aria-label="Sobre a seleção do feed"><app-icon name="sliders" /></button>
           </div>
           <div class="topic-list" aria-label="Filtrar por assunto">
@@ -185,16 +187,16 @@
       </main>
 
       <aside class="right-column">
-        <section class="trending-section"><h2 class="section-kicker">Em pauta <app-icon name="fire" /></h2><p class="section-caption">CONVERSAS QUE IMPORTAM</p>
+        <section class="trending-section"><h2 class="section-kicker">Em pauta <app-icon name="fire" /></h2><p class="section-caption">CONVERSAS QUE IMPORTAM</p><p class="demo-caption">Dados ilustrativos do protótipo</p>
           <button class="trending-row" (click)="setTopic('Sociedade')"><span class="trending-number">01</span><span><span class="trend-topic">SOCIEDADE</span><span class="trend-title">O futuro das nossas cidades</span><span class="trend-count">128 pessoas conversando</span></span></button>
           <button class="trending-row" (click)="setTopic('Ciência')"><span class="trending-number">02</span><span><span class="trend-topic">CIÊNCIA</span><span class="trend-title">Energia que se compartilha</span><span class="trend-count">96 pessoas conversando</span></span></button>
           <button class="trending-row" (click)="setTopic('Tecnologia')"><span class="trending-number">03</span><span><span class="trend-topic">TECNOLOGIA</span><span class="trend-title">IA no nosso dia a dia</span><span class="trend-count">74 pessoas conversando</span></span></button>
         </section>
-        <section class="publishers-section"><h2 class="section-kicker">Outros olhares <app-icon name="globe" /></h2>
+        <section class="publishers-section"><h2 class="section-kicker">Outros olhares <app-icon name="globe" /></h2><p class="demo-caption">Veículos fictícios do protótipo</p>
           @for (article of [articles[2], articles[1]]; track article.id) { <div class="suggestion"><span class="publisher-logo" [class]="'publisher-logo ' + (article.logo || '')">{{ article.mark }}</span><div class="suggestion-info"><strong>{{ article.publisher }} <app-icon name="verified" className="verified-icon" /></strong><small>{{ article.id === 3 ? 'Tecnologia e cotidiano' : 'Ciência para entender o mundo' }}</small></div><button class="follow-button" [class.following]="following.has(article.publisher)" (click)="toggleFollow(article.publisher)">{{ following.has(article.publisher) ? 'Seguindo' : 'Seguir' }}</button></div> }
         </section>
-        <section class="fop-intro"><div class="fop-wordmark"><app-icon name="shield" /> FOP</div><h3>Boas conversas<br>começam com fatos.</h3><p>Antes de chegar até você, cada notícia passa por uma análise de evidências.</p><button (click)="open('how')">Conheça a FOP <app-icon name="arrow" /></button></section>
-        <footer class="right-footer"><div class="demo-label"><app-icon name="info" /> Protótipo visual · conteúdo fictício</div><span>TAKTA © 2026 · Facts first. Your take next.</span></footer>
+        <section class="fop-intro veritai-intro"><img class="veritai-logo-img" src="brand/web/veritai-logo.png" alt="VeritAI (in FOMO)" width="480" height="480" /><h3>Boas conversas começam com fatos.</h3><p>A VeritAI é a IA de verificação do FOMO: analisa cada afirmação e mostra as evidências. Notícias analisadas por ela trazem esta assinatura; a decisão de publicar é sempre de um revisor humano.</p><button (click)="open('how')">Conheça a VeritAI <app-icon name="arrow" /></button></section>
+        <footer class="right-footer"><div class="demo-label"><app-icon name="info" /> Protótipo visual · conteúdo fictício</div><span>FOMO © 2026 · Fear of Missing Objectivity.</span></footer>
       </aside>
     </div>
   </div>
@@ -231,25 +233,27 @@
   <div class="overlay-backdrop" [class.modal-layout]="panel === 'record'" (click)="$event.target === $event.currentTarget && closePanel()">
     <section class="detail-panel" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
       <header class="panel-header">
-        @if (panel === 'evidence' || panel === 'how' || panel === 'liveEvidence') { <h2 class="fop-wordmark" id="dialog-title"><app-icon name="shield" /> FOP <span class="fop-submark">Fact On Publication</span></h2> }
+        @if (panel === 'how' || (panel === 'liveEvidence' && liveArticle?.verificado_pela_veritai)) { <h2 class="panel-veritai-title" id="dialog-title"><img class="veritai-logo-img" src="brand/web/veritai-logo.png" alt="VeritAI (in FOMO)" width="480" height="480" /></h2> }
+        @else if (panel === 'liveEvidence') { <h2 id="dialog-title">Verificação automática</h2> }
+        @else if (panel === 'evidence') { <h2 id="dialog-title">Exemplo visual fictício</h2> }
         @else { <h2 id="dialog-title">{{ panel === 'article' ? 'A notícia' : panel === 'comments' ? 'A conversa' : panel === 'compose' ? 'Seu ponto de vista' : panel === 'video' ? 'Uma reaction em vídeo' : panel === 'record' ? 'Gravar reaction' : panelTitle }}</h2> }
         <button class="icon-button" (click)="closePanel()" aria-label="Fechar painel"><app-icon name="close" /></button>
       </header>
-      <div class="panel-body">
+      <div class="panel-body" tabindex="0">
         @if (panel === 'liveEvidence' && liveArticle; as article) {
-          <div class="eyebrow">NOTÍCIA PUBLICADA · {{ article.publisher.toUpperCase() }}</div><h3 class="panel-headline">{{ article.title }}</h3><p class="live-body">{{ article.body }}</p><h3 class="panel-subtitle">Resultado da verificação, por afirmação</h3>@if (!article.verificado_pela_veritai) { <p class="demo-note">Ao menos uma afirmação foi analisada pelo pipeline automático anterior, antes da integração com a VeritAI. Essas afirmações estão identificadas abaixo.</p> }
+          <div class="eyebrow">NOTÍCIA PUBLICADA · {{ article.publisher.toUpperCase() }}</div><h3 class="panel-headline">{{ article.title }}</h3><p class="live-body">{{ article.body }}</p><section class="veritai-block" aria-labelledby="leitor-veritai-titulo"><header class="veritai-block-head"><h3 class="veritai-block-title" id="leitor-veritai-titulo">Resultado da verificação, por afirmação</h3>@if (article.verificado_pela_veritai) { <app-veritai-mark [caption]="true" /> }</header>@if (!article.verificado_pela_veritai) { <p class="demo-note">Ao menos uma afirmação foi analisada pelo pipeline automático anterior, antes da integração com a VeritAI. Essas afirmações estão identificadas abaixo.</p> }
           @if (article.anexo_sem_texto) { <p class="demo-note">Esta notícia tem imagem ou documento sem texto enviado pelo publisher. Esse material não foi avaliado pela IA; foi conferido por um revisor humano.</p> }
           @if (article.manual_review) { <p class="demo-note">Publicação aprovada após conferência humana: a análise automática não encontrou evidências textuais suficientes para todas as afirmações.</p> }
-          @for (claim of article.claims; track claim.id) { <article class="live-claim"><strong>{{ claim.text }}</strong><p>{{ claim.texto_publico }}</p>@if (claim.fontes.length) { <small>Fontes consultadas</small>@for (source of claim.fontes; track $index) { <div class="source-card"><div class="source-top">{{ source.titulo }}@if (source.data_publicacao) { <small>{{ source.data_publicacao }}</small> }</div>@if (source.url) { <a [href]="source.url" target="_blank" rel="noopener noreferrer">Abrir fonte original</a> }</div> } }</article> }
-          <p class="demo-note">{{ article.verificado_pela_veritai ? 'Análise automática da VeritAI' : 'Análise automática (VeritAI ou pipeline anterior, conforme indicado em cada afirmação)' }} com decisão de um revisor humano. O resultado vale para cada afirmação, não para a notícia inteira, e pode mudar com novas evidências.</p>
+          @for (claim of article.claims; track claim.id; let index = $index) { <article class="veritai-claim"><span class="veritai-claim-number" aria-hidden="true">{{ index + 1 }}</span><div><span class="veritai-label">Afirmação</span><strong>{{ claim.text }}</strong><p class="veritai-public-text">{{ claim.texto_publico }}</p>@if (claim.fontes.length) { <span class="veritai-label">Fontes consultadas</span><ul class="veritai-sources">@for (source of claim.fontes; track $index) { <li>@if (source.url) { <a [href]="source.url" target="_blank" rel="noopener noreferrer">{{ source.titulo }}<span class="sr-only"> (abre em nova aba)</span></a> } @else { <span>{{ source.titulo }}</span> }@if (source.data_publicacao) { <small> · {{ source.data_publicacao }}</small> }</li> }</ul> }</div></article> }
+          <p class="veritai-footnote">{{ article.verificado_pela_veritai ? 'Análise automática da VeritAI' : 'Análise automática (VeritAI ou pipeline anterior, conforme indicado em cada afirmação)' }} com decisão de um revisor humano. O resultado vale para cada afirmação, não para a notícia inteira, e pode mudar com novas evidências.</p></section>
         }
         @if (panel === 'message') { <div class="message-panel"><app-icon name="info" /><p>{{ panelMessage }}</p></div> }
         @if (panel === 'how') {
           <div class="eyebrow">FATOS PRIMEIRO. SUA VISÃO DEPOIS.</div><h3 class="how-title">Uma base confiável.<br><em>Mil formas de pensar.</em></h3>
           <div class="how-step"><div class="how-number">1</div><div><h3>A notícia chega</h3><p>O publisher envia a notícia e separa as afirmações que precisam ser verificadas.</p></div></div>
-          <div class="how-step"><div class="how-number">2</div><div><h3>As evidências entram em cena</h3><p>A FOP identifica afirmações e busca fontes relevantes para comparar o que elas dizem.</p></div></div>
+          <div class="how-step"><div class="how-number">2</div><div><h3>As evidências entram em cena</h3><p>Cada afirmação passa por análise automática, que busca fontes e compara o que elas dizem. Quando a análise é da VeritAI, a notícia traz a assinatura dela. Um revisor humano decide se a notícia é publicada.</p></div></div>
           <div class="how-step"><div class="how-number">3</div><div><h3>A análise fica à vista</h3><p>Você pode consultar o que sustenta, contradiz ou ainda não permite concluir sobre uma afirmação.</p></div></div>
-          <div class="state-legend"><div class="state-chip support">Evidências apoiam</div><div class="state-chip refute">Evidências contradizem</div><div class="state-chip wait">Sem evidências suficientes</div><div class="state-chip conflict">Conclusões diferentes</div></div>
+          <ul class="state-legend" aria-label="Resultados possíveis por afirmação">@for (item of resultados; track item.icon) { <li class="state-chip"><span class="result-icon" aria-hidden="true">{{ item.icon }}</span>{{ item.text }}</li> }</ul>
           <p class="demo-note">O fluxo de publicação usa busca, comparação textual e revisão humana. As notícias da seção “Exemplos visuais” são fictícias.</p>
         }
         @if (selectedArticle; as article) {
@@ -257,12 +261,12 @@
             <div class="eyebrow">POR TRÁS DA NOTÍCIA</div><h3 class="panel-headline">{{ article.title }}</h3>
             <div class="status-card"><div class="status-title"><app-icon name="shield" /> Exemplo visual, sem verificação real</div><p>Notícia fictícia do protótipo. Nas notícias publicadas, o resultado aparece por afirmação, com o texto da análise automática e as fontes. A interpretação continua com você.</p><div class="status-meta"><span><app-icon name="document" /> {{ article.sources.length }} fontes fictícias</span><span><app-icon name="clock" /> Análise demonstrativa</span></div></div>
             <h3 class="panel-subtitle">O que foi analisado</h3><div class="claim-list">@for (claim of article.claims; track claim) { <div class="claim-item"><app-icon name="check" /><span>{{ claim }}</span></div> }</div>
-            <h3 class="panel-subtitle">Evidências encontradas</h3>@for (source of article.sources; track source.title; let index = $index) { <article class="source-card"><div class="source-top"><span class="source-icon"><app-icon [name]="index ? 'globe' : 'document'" /></span>{{ source.title }}<small>Apoia</small></div><p>“{{ source.excerpt }}”</p><footer>{{ source.kind }} · fonte e trecho fictícios</footer></article> }
+            <h3 class="panel-subtitle">Evidências encontradas</h3>@for (source of article.sources; track source.title; let index = $index) { <article class="source-card"><div class="source-top"><span class="source-icon"><app-icon [name]="index ? 'globe' : 'document'" /></span>{{ source.title }}<small><span class="relation-icon" aria-hidden="true">{{ apoia.icon }}</span>{{ apoia.text }}</small></div><p>“{{ source.excerpt }}”</p><footer>{{ source.kind }} · fonte e trecho fictícios</footer></article> }
             <p class="demo-note">Este é um exemplo visual. Nenhuma verificação real foi executada.</p>
           }
           @if (panel === 'article') {
             <div class="card-publisher article-publisher"><span class="publisher-logo">{{ article.mark }}</span><div><span class="publisher-name">{{ article.publisher }} <app-icon name="verified" className="verified-icon" /></span><span class="publisher-meta">{{ article.time }} · Leitura de 3 min</span></div></div><h3 class="panel-headline">{{ article.title }}</h3>
-            <div class="evidence-strip"><span class="evidence-state"><app-icon name="shield" /> Exemplo visual da <b>FOP</b></span><button class="evidence-link" (click)="open('evidence', article.id)">Ver evidências <app-icon name="chevron" /></button></div>
+            <div class="evidence-strip"><span class="evidence-state"><app-icon name="shield" /> Exemplo visual <b>fictício</b></span><button class="evidence-link" (click)="open('evidence', article.id)">Ver evidências <app-icon name="chevron" /></button></div>
             <div class="article-reading">@if (article.image) { <img [src]="article.image" alt="Fotografia ilustrativa da notícia" /> }<p>{{ article.summary }}</p><app-audio-player [article]="article" [playing]="audioPlaying === article.id" (togglePlay)="toggleAudio($event)" (showInfo)="showAudioInfo($event)" (playExpert)="showExpertAudio($event)" /><p>{{ readingParagraph(article.id) }}</p><h3>O que está em discussão</h3><p>O acesso, a participação da comunidade e os impactos no cotidiano são pontos centrais do debate. Os documentos apresentados explicam a proposta, mas suas consequências ainda permitem diferentes leituras.</p><p class="article-quote">Os fatos são o ponto de partida. A conversa sobre o que eles significam pertence a todos.</p></div>
           }
           @if (panel === 'comments') {

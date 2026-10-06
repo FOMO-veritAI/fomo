@@ -1,0 +1,204 @@
+/* Identidade visual FOMO + VeritAI. Carregado depois de styles.css.
+   FOMO: pop-art/quadrinhos, preto #000, off-white #F0F0F0, vermelho #FF3333 só em destaque.
+   Vermelho nunca em texto pequeno: sobre claro, só em títulos >= 24px; botões vermelhos têm texto preto (5,8:1).
+   VeritAI: preto sobre branco, sem cor, moldura fina; resultados por ícone + texto, nunca vermelho/verde. */
+
+/* Base e acessibilidade */
+body { background: var(--bg); color: var(--ink); font-family: var(--font); }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid #000; outline-offset: 3px; box-shadow: 0 0 0 6px #fff;
+}
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+::placeholder { color: #6c6c6c; opacity: 1; }
+img { object-fit: cover; }
+
+/* Marca */
+.sidebar { background: #fff; border-right: 3px solid #000; }
+.brand { padding: 0; width: 176px; max-width: 100%; display: block; margin-left: -6px; }
+.brand img { width: 100%; height: auto; object-fit: contain; }
+.brand-tagline { font-family: var(--display); font-size: 19px; letter-spacing: 1px; color: #000; margin-top: 4px; }
+.mobile-brand img { width: 46px; height: 46px; object-fit: contain; }
+.sidebar-manifest p { font-family: var(--display); font-size: 26px; font-weight: 400; letter-spacing: 1px; line-height: 1.05; color: #000; }
+.sidebar-manifest p em { font-style: normal; color: var(--accent); }
+.little-spark { color: var(--accent); }
+.sidebar-foot { color: #000; font-size: 12px; font-weight: 600; gap: 8px; }
+
+/* Navegação */
+.nav-item { color: #000; font-weight: 600; border-radius: 0; border: 2px solid transparent; }
+.nav-item:hover { border-color: #000; background: #fff; }
+.nav-item.active { background: #000; color: #f0f0f0; font-weight: 800; }
+.nav-item.active svg { color: var(--accent); }
+.nav-item.active:before { background: var(--accent); width: 6px; border-radius: 0; }
+.nav-label { color: #555; font-weight: 800; letter-spacing: 1.5px; }
+.nav-divider { background: #000; height: 2px; }
+.nav-count { background: var(--accent); color: #000; font-weight: 800; }
+
+/* Cabeçalho com retícula (pontos de quadrinho) */
+.topbar {
+  background-color: #fff;
+  background-image: radial-gradient(#00000024 1.1px, transparent 1.4px);
+  background-size: 9px 9px;
+  border-bottom: 3px solid #000;
+}
+.desktop-title { font-family: var(--display); font-size: 34px; letter-spacing: 1.5px; font-weight: 400; background: #fff; padding: 0 8px; border: 2px solid #000; box-shadow: 3px 3px 0 #000; }
+.topbar-note { background: #fff; padding: 2px 6px; color: #000; font-weight: 600; }
+.topbar-title:after { display: none; }
+.search-wrap { background: #fff; border: 2px solid #000; border-radius: 0; }
+.search-wrap input { color: #000; }
+.search-wrap kbd { border: 1px solid #000; color: #000; }
+.header-tools .icon-button { background: #fff; border: 2px solid #000; color: #000; }
+.notification-dot { background: var(--accent); border-color: #000; }
+.avatar { color: #000; }
+.avatar.me { background: #000; color: #f0f0f0; }
+.feed-tab-list { display: contents; }
+
+/* Saudação e seções: Bangers só em destaque */
+.greeting-meta { color: #000; font-weight: 800; letter-spacing: 1.5px; }
+.greeting h1 { font-family: var(--display); font-weight: 400; font-size: 56px; line-height: .98; letter-spacing: 1.5px; color: #000; }
+.greeting h1 span { color: var(--accent); -webkit-text-stroke: 1px #000; paint-order: stroke fill; }
+.greeting p { color: #000; font-weight: 500; }
+.view-section-label { font-family: var(--display); font-weight: 400; font-size: 30px; letter-spacing: 1.2px; color: #000; margin: 30px 0 16px; align-items: baseline; }
+.view-section-label span { font-family: var(--font); font-size: 13px; font-weight: 600; letter-spacing: 0; color: #444; text-align: right; }
+.section-kicker { font-family: var(--display); font-weight: 400; font-size: 26px; letter-spacing: 1.2px; color: #000; }
+.section-caption, .trend-topic { color: #444; font-weight: 800; }
+.demo-caption { margin: 2px 0 14px; font-size: 12px; font-weight: 500; color: #555; font-style: italic; }
+.trending-number { font-family: var(--display); color: var(--accent); font-size: 40px; -webkit-text-stroke: 1px #000; paint-order: stroke fill; }
+.trend-title { color: #000; font-weight: 700; }
+.trend-count { color: #555; }
+.quote-mark { color: var(--accent); -webkit-text-stroke: 1px #000; }
+
+/* Abas e filtros */
+.feed-tab { color: #000; font-weight: 600; }
+.feed-tab.active { color: #000; font-weight: 800; }
+.feed-tab.active:after { background: var(--accent); height: 5px; border-radius: 0; border: 1px solid #000; }
+.feed-tabs { border-bottom: 2px solid #000; }
+.topic { background: #fff; color: #000; border: 2px solid #000; border-radius: 0; font-weight: 700; }
+.topic:hover { background: #f0f0f0; }
+.topic.active { background: #000; color: #f0f0f0; border-color: #000; }
+
+/* Cartões de notícia: manchete em Inter 800 */
+.news-card { background: #fff; border: 3px solid #000; border-radius: 0; box-shadow: 6px 6px 0 #000; }
+.card-content h2 { font-family: var(--font); font-weight: 800; letter-spacing: -.6px; line-height: 1.12; color: #000; }
+.headline-button:hover h2 { color: #000; text-decoration: underline; text-decoration-thickness: 3px; text-decoration-color: var(--accent); }
+.card-summary { color: #333; }
+.publisher-logo { background: #000; color: #f0f0f0; border-radius: 0; font-family: var(--display); font-size: 24px; }
+.publisher-logo.ponto { background: #fff; color: #000; border: 2px solid #000; font-family: var(--display); }
+.publisher-logo.lume { background: #000; color: #f0f0f0; }
+.publisher-name { color: #000; font-weight: 800; }
+.publisher-meta { color: #555; }
+.verified-icon { color: #000; }
+.rank-pill { background: #000; color: #f0f0f0; padding: 3px 8px; font-weight: 800; }
+.rank-pill svg { color: var(--accent); }
+.fiction-badge { margin-left: auto; padding: 3px 8px; border: 2px dashed #000; background: #fff; color: #000; font-size: 11px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; white-space: nowrap; }
+.fiction-badge + .rank-pill { margin-left: 8px; }
+.card-photo-wrap img, .card-image { border-bottom: 3px solid #000; }
+.card-actions button { color: #000; font-weight: 600; }
+
+/* Faixa de verificação no cartão: área VeritAI, sóbria */
+.evidence-strip { background: #fff; border: 2px solid #000; border-radius: 0; }
+.evidence-state { color: #000; font-weight: 700; }
+.evidence-state b { color: #000; letter-spacing: .4px; }
+.evidence-link { color: #000; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Botões */
+.button-primary {
+  background: var(--accent); color: #000; border: 3px solid #000; border-radius: 0;
+  box-shadow: 4px 4px 0 #000; font-weight: 800; text-transform: uppercase; letter-spacing: .4px;
+  transition: transform .12s, box-shadow .12s;
+}
+.button-primary:hover:not(:disabled) { background: var(--accent); transform: translate(-1px, -1px); box-shadow: 5px 5px 0 #000; }
+.button-primary:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 1px 1px 0 #000; }
+.button-primary:disabled { background: #fff; color: #444; box-shadow: none; opacity: 1; border-style: dashed; }
+.button-secondary, .follow-button { background: #fff; color: #000; border: 2px solid #000; border-radius: 0; font-weight: 800; }
+.button-secondary:hover:not(:disabled), .follow-button:hover { background: #f0f0f0; }
+.follow-button.following { background: #000; color: #f0f0f0; }
+.button-secondary:disabled { color: #444; border-style: dashed; opacity: 1; }
+
+/* Coluna direita: cartão da VeritAI (sóbrio) */
+.veritai-intro { background: #fff; border: 2px solid #000; border-radius: 0; }
+.veritai-intro:before, .veritai-intro:after { display: none; }
+.veritai-intro .veritai-logo-img { width: 120px; height: auto; object-fit: contain; margin: -8px 0 4px -6px; }
+.veritai-intro h3 { font-family: var(--font); font-weight: 800; font-size: 20px; line-height: 1.2; color: #000; }
+.veritai-intro p { color: #333; }
+.veritai-intro button { color: #000; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.right-footer, .right-footer .demo-label { color: #555; }
+
+/* Painéis laterais */
+.detail-panel { border-left: 3px solid #000; box-shadow: -10px 0 0 #00000026; }
+.panel-header { border-bottom: 3px solid #000; background: #fff; }
+.panel-header h2 { font-family: var(--display); font-weight: 400; font-size: 28px; letter-spacing: 1px; }
+.panel-header .icon-button { border: 2px solid #000; border-radius: 0; }
+.panel-veritai-title { flex: 1; margin: -10px 0; }
+.panel-veritai-title img { width: 84px; height: 84px; object-fit: contain; }
+.panel-headline { font-family: var(--font); font-weight: 800; letter-spacing: -.6px; color: #000; }
+.eyebrow { color: #444; font-weight: 800; }
+.live-body { color: #222; }
+.demo-note { color: #444; border-top: 1px solid #000; }
+.status-card { background: #fff; border: 2px dashed #000; border-radius: 0; }
+.status-title { color: #000; }
+.status-card p, .status-meta { color: #333; }
+.source-card { border: 1px solid #000; border-radius: 0; }
+.source-top small { background: #fff; border: 1px solid #000; color: #000; border-radius: 0; }
+.claim-item { border: 1px solid #000; border-radius: 0; color: #222; }
+.claim-item svg { color: #000; }
+.how-title { font-family: var(--font); font-weight: 800; color: #000; }
+.how-title em { color: #000; font-style: italic; }
+.how-number { border: 2px solid #000; color: #000; font-family: var(--font); font-weight: 900; border-radius: 0; }
+.how-step p { color: #333; }
+
+/* ====== VeritAI ====== */
+.veritai-mark { display: inline-flex; align-items: baseline; gap: 0; color: #000; line-height: 1; white-space: nowrap; }
+.veritai-mark .verit { font-family: var(--verit); font-style: italic; font-weight: 600; font-size: 1.3em; letter-spacing: -.01em; }
+.veritai-mark .verit-ai { font-family: var(--font); font-weight: 900; font-size: 1.12em; letter-spacing: -.02em; margin-left: .05em; }
+.veritai-mark .verit-caption { font-family: var(--font); font-weight: 800; font-size: .62em; letter-spacing: .04em; margin-left: .55em; }
+.veritai-mark-lg { font-size: 26px; }
+
+.veritai-block { background: #fff; color: #000; border: 2px solid #000; padding: 16px 18px; margin: 20px 0; }
+.veritai-block-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 4px; }
+.veritai-block-title { font-family: var(--font); font-weight: 800; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; margin: 0; color: #000; }
+.veritai-block .demo-note { border-top: 0; margin-top: 10px; color: #333; }
+.veritai-claim { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; margin: 0; padding: 16px 0; background: none; border: 0; border-bottom: 1px solid #000; border-radius: 0; }
+.veritai-claim:last-of-type { border-bottom: 0; }
+.veritai-claim-number { display: grid; place-items: center; width: 30px; height: 30px; border: 2px solid #000; font-weight: 900; font-size: 14px; }
+.veritai-label { display: block; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #444; margin: 8px 0 3px; }
+.veritai-label:first-child { margin-top: 0; }
+.veritai-claim strong { display: block; font-size: 16px; color: #000; line-height: 1.4; }
+.veritai-public-text { margin: 10px 0 4px; padding-left: 12px; border-left: 3px solid #000; font-weight: 600; color: #000; line-height: 1.5; }
+.veritai-sources { list-style: none; margin: 0; padding: 0; }
+.veritai-sources li { padding: 4px 0; font-size: 14px; }
+.veritai-sources a { color: #000; text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
+.veritai-sources small { color: #444; }
+.veritai-footnote { margin-top: 10px; padding-top: 10px; border-top: 1px solid #000; font-size: 13px; color: #333; line-height: 1.55; }
+
+/* Resultados: ícone + texto, monocromáticos */
+.result-tag { display: flex; width: fit-content; align-items: center; gap: 8px; margin: 8px 0 2px; font-size: 13px; font-weight: 800; color: #000; }
+.result-icon { display: inline-grid; place-items: center; min-width: 24px; height: 24px; border: 2px solid #000; background: #fff; font-family: var(--font); font-weight: 900; font-size: 14px; line-height: 1; color: #000; }
+.relation-icon { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 6px; border: 1px solid #000; background: #fff; font-family: var(--font); font-weight: 900; font-size: 11px; line-height: 1; color: #000; vertical-align: -3px; }
+.state-legend { list-style: none; padding: 0; }
+.state-chip { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #000; border-radius: 0; color: #000; font-weight: 700; }
+
+/* Barra inferior do celular */
+.mobile-nav { background: #fff; border-top: 3px solid #000; backdrop-filter: none; justify-content: space-between; padding-left: 6px; padding-right: 6px; }
+.mobile-item { color: #000; font-weight: 600; border-radius: 0; flex: 0 1 auto; min-width: 0; padding: 4px 3px; font-size: 11px; white-space: nowrap; }
+.mobile-item.active { background: #000; color: #f0f0f0; }
+.mobile-item.active svg { color: var(--accent); }
+.photo-category { background: #fff; color: #000; border: 2px solid #000; border-radius: 0; }
+
+/* Telas estreitas: sem rolagem horizontal */
+@media (max-width: 780px) {
+  .sidebar .brand { font-size: inherit; width: 52px; margin: 0 auto 30px; }
+  .sidebar .brand:before { content: none; }
+  .sidebar .brand img { content: url("/brand/web/fm-192.png"); }
+  .nav-item.active:before { display: none; }
+}
+@media (max-width: 600px) {
+  .greeting h1 { font-size: 40px; }
+  .view-section-label { font-size: 24px; flex-wrap: wrap; }
+  .view-section-label span { text-align: left; max-width: none; }
+  .news-card { box-shadow: 4px 4px 0 #000; }
+  .desktop-title { display: none; }
+  .veritai-block { padding: 12px; }
+  .veritai-claim { grid-template-columns: 28px minmax(0, 1fr); gap: 9px; }
+  .veritai-claim-number { width: 26px; height: 26px; }
+  .fiction-badge { font-size: 10px; padding: 2px 6px; }
+}
