@@ -20,3 +20,8 @@ VERITAI_TIMEOUT = float(os.getenv("VERITAI_TIMEOUT", "600"))
 # Decisão do servidor, nunca do publisher: ele não pode desligar a busca e enviar só evidências favoráveis.
 VERITAI_BUSCAR_WEB = os.getenv("VERITAI_BUSCAR_WEB", "true").strip().lower() not in {"0", "false", "nao", "não", "no"}
 FUSO_NOTICIA = "America/Sao_Paulo"
+
+# Origens do frontend local; FOMO_CORS_ORIGINS acrescenta outras (ex.: GitHub Pages), separadas por vírgula.
+CORS_ORIGINS = ["http://localhost:4200", "http://127.0.0.1:4200", "http://localhost:4173", "http://127.0.0.1:4173"] + [
+    origem.strip().rstrip("/") for origem in os.getenv("FOMO_CORS_ORIGINS", "").split(",") if origem.strip()
+]

@@ -45,7 +45,15 @@ A busca de fontes (Bing News RSS, GDELT, base própria e, opcionalmente, Google 
 
 Os resultados são **por afirmação** e expressam a relação entre ela e os trechos encontrados: evidências que apoiam, contradizem, são insuficientes ou apresentam conclusões diferentes. Enquanto a VeritAI não tiver calibração, não há porcentagem: a interface mostra **"Não avaliável"**. Checagens anteriores aparecem para o revisor como **checagens candidatas, a conferir**, nunca como veredito. Busca incompleta, fontes copiadas umas das outras, documentos falsos e erros dos modelos exigem julgamento humano. Neste MVP, as chaves são locais e compartilhadas; ainda não há cadastro institucional, identidade verificada, isolamento entre publishers, revisão de autenticidade de documentos ou infraestrutura de produção.
 
-As notícias da seção **Exemplos visuais** permanecem fictícias para demonstrar o protótipo. Notícias criadas e aprovadas no fluxo de verificação aparecem separadamente em **Notícias publicadas**, vindas da API local. O frontend usa `http://127.0.0.1:8000` como endereço da API, portanto este setup é para uso local.
+As notícias da seção **Exemplos visuais** permanecem fictícias para demonstrar o protótipo. Notícias criadas e aprovadas no fluxo de verificação aparecem separadamente em **Notícias publicadas**, vindas da API. O frontend usa `http://127.0.0.1:8000` como endereço da API, exceto quando o build define outro (veja abaixo).
+
+## Frontend no GitHub Pages
+
+O workflow `.github/workflows/pages.yml` publica só o frontend em `https://fomo-veritai.github.io/fomo/` a cada push em `main`. O GitHub Pages serve arquivos estáticos: a API FastAPI e a VeritAI não rodam lá. Ainda não há API pública (hospedagem é um passo planejado).
+
+- Endereço da API: variável do repositório `FOMO_API_URL` (Settings → Secrets and variables → Actions → Variables). Sem ela, o build usa `http://127.0.0.1:8000`, e a página publicada só mostra notícias publicadas para quem roda a API na própria máquina. Os **Exemplos visuais** aparecem sempre.
+- CORS: a API só aceita as origens locais. Para aceitar a página publicada, inicie a API com `FOMO_CORS_ORIGINS=https://fomo-veritai.github.io` (várias origens separadas por vírgula).
+- Uma página HTTPS chamando `http://127.0.0.1:8000` pode exigir que o navegador permita acesso à rede local. Uma API pública precisa de HTTPS.
 
 ## Verificação do projeto
 

@@ -17,6 +17,7 @@ os.environ["TAKTA_REVIEWER_KEY"] = "reviewer-test-key"
 # Endereço que nunca é usado de verdade: todo tráfego passa pelo transporte simulado abaixo.
 os.environ["VERITAI_URL"] = "http://veritai.teste"
 os.environ["VERITAI_BUSCAR_WEB"] = "false"
+os.environ["FOMO_CORS_ORIGINS"] = "https://fomo.teste/, https://outro.teste"
 
 from backend.app import veritai_client  # noqa: E402
 

@@ -105,7 +105,9 @@ export interface FopPublicArticle {
   anexo_sem_texto: boolean;
 }
 
-const API = 'http://127.0.0.1:8000';
+// Definida no build do GitHub Pages (ng build --define); sem ela, a API local.
+declare const FOMO_API_URL: string | undefined;
+const API = (typeof FOMO_API_URL === 'string' && FOMO_API_URL ? FOMO_API_URL : 'http://127.0.0.1:8000').replace(/\/+$/, '');
 
 // Erros de validação do FastAPI chegam como lista; mostra só as mensagens.
 function errorDetail(detail: unknown): string {
@@ -118,7 +120,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   try {
     response = await fetch(`${API}${path}`, options);
   } catch {
-    throw new Error('API do FOMO indisponível. Inicie o servidor Python na porta 8000.');
+    throw new Error(`API do FOMO indisponível em ${API}. Inicie o servidor Python ou confira o endereço.`);
   }
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));

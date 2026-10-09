@@ -31,7 +31,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="TAKTA FOP", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200", "http://localhost:4173", "http://127.0.0.1:4173"],
+    allow_origins=config.CORS_ORIGINS,
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["X-Publisher-Key", "X-Reviewer-Key", "Content-Type"],

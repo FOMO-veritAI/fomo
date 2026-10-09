@@ -188,7 +188,7 @@ img { object-fit: cover; }
 @media (max-width: 780px) {
   .sidebar .brand { font-size: inherit; width: 52px; margin: 0 auto 30px; }
   .sidebar .brand:before { content: none; }
-  .sidebar .brand img { content: url("/brand/web/fm-192.png"); }
+  .sidebar .brand img { content: url("../public/brand/web/fm-192.png"); }
   .nav-item.active:before { display: none; }
 }
 @media (max-width: 600px) {
