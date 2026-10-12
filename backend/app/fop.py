@@ -4,10 +4,6 @@ import re
 import threading
 from dataclasses import dataclass
 
-import torch
-from sentence_transformers import SentenceTransformer
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-
 from .config import EMBEDDING_MODEL, NLI_MODEL
 from .retrieval import RetrievedSource
 
@@ -21,6 +17,11 @@ def models():
     if _models is None:
         with _load_lock:
             if _models is None:
+                # Importados só aqui: no modo serviço (padrão) a API não carrega torch, e a imagem nem o
+                # instala (requirements-embutido.txt).
+                from sentence_transformers import SentenceTransformer
+                from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
                 embedding = SentenceTransformer(EMBEDDING_MODEL, device="cpu")
                 tokenizer = AutoTokenizer.from_pretrained(NLI_MODEL)
                 nli = AutoModelForSequenceClassification.from_pretrained(NLI_MODEL).eval()
@@ -46,6 +47,8 @@ def compare(claim: str, sources: list[RetrievedSource]) -> list[ScoredEvidence]:
     candidates = [(source, sentence) for source in sources for sentence in passages(source.text)]
     if not candidates:
         return []
+    import torch
+
     embedding, tokenizer, nli = models()
     # O modelo normaliza vetores, então o produto é a similaridade do cosseno.
     vectors = embedding.encode([claim, *[text for _, text in candidates]], normalize_embeddings=True, convert_to_tensor=True)

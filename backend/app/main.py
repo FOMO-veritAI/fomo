@@ -20,11 +20,22 @@ from .veritai_client import VeritAIErro
 
 # O contrato da VeritAI aceita até 20 evidências e 20 anexos sem texto por análise.
 MAX_ATTACHMENTS = 20
+INTERRUPTED_MESSAGE = "A análise foi interrompida porque o servidor reiniciou. Envie a notícia para análise novamente."
+
+
+def recover_interrupted_verifications() -> None:
+    # A análise roda em segundo plano neste processo: se ele reiniciou no meio, a notícia não pode ficar presa em VERIFYING.
+    with connection() as db:
+        db.execute(
+            "UPDATE articles SET status='ERROR',updated_at=?,search_errors=? WHERE status='VERIFYING'",
+            (now(), json.dumps([INTERRUPTED_MESSAGE], ensure_ascii=False)),
+        )
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
+    recover_interrupted_verifications()
     yield
 
 
