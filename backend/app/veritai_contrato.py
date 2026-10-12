@@ -1,6 +1,7 @@
 """Contrato de entrada e saída da VeritAI (relatório por afirmação).
 
-Cópia de veritai/relatorio.py do repositório FOMO-veritAI/veritai, commit 1136210.
+Cópia de veritai/relatorio.py do repositório FOMO-veritAI/veritai, commit 1136210, mais os modelos do
+POST /extrair (PedidoExtracao, AfirmacaoCandidata, RelatorioExtracao), do commit 7bcb080 de cadasiso/fomo-veritai-local.
 Atualize este arquivo junto com o veritai/relatorio.py: qualquer mudança lá precisa ser copiada aqui.
 Só o TEXTO_PUBLICO foi omitido, porque o FOMO exibe o texto_publico que vem em cada relatório.
 """
@@ -114,5 +115,28 @@ class RelatorioAfirmacao(BaseModel):
 
 class RelatorioAnalise(BaseModel):
     afirmacoes: list[RelatorioAfirmacao]
+    avisos: list[str]
+    versoes: dict[str, str]
+
+
+class PedidoExtracao(BaseModel):
+    noticia: Noticia
+    maximo: int = Field(default=10, ge=1, le=10)
+
+
+class AfirmacaoCandidata(BaseModel):
+    """Afirmação proposta pela extração; só vai para o /analisar depois que o publicador confirma."""
+
+    texto: str  # pronta para o /analisar (10 a 500 caracteres), com as datas completadas
+    trecho_origem: str  # frase literal da notícia
+    posicao: int  # 0 = título; depois, a ordem da frase no texto
+    pontuacao: int
+    sinais: list[str]
+    alertas: list[str]
+    atribuicao: str | None
+
+
+class RelatorioExtracao(BaseModel):
+    afirmacoes: list[AfirmacaoCandidata]
     avisos: list[str]
     versoes: dict[str, str]

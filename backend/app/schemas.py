@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 from .veritai_contrato import host_valido
 
@@ -8,6 +8,7 @@ from .veritai_contrato import host_valido
 # Mesmos limites do contrato da VeritAI, para não receber 422 dela.
 CLAIM_MIN = 10
 CLAIM_MAX = 500
+CLAIM_COUNT = 8
 
 
 class ArticleCreate(BaseModel):
@@ -16,7 +17,7 @@ class ArticleCreate(BaseModel):
     summary: str = Field(min_length=20, max_length=1000)
     body: str = Field(min_length=30, max_length=30000)
     topic: str = Field(min_length=2, max_length=80)
-    claims: list[str] = Field(min_length=1, max_length=8)
+    claims: list[str] = Field(min_length=1, max_length=CLAIM_COUNT)
 
     @field_validator("claims")
     @classmethod
@@ -28,6 +29,13 @@ class ArticleCreate(BaseModel):
             if not CLAIM_MIN <= len(claim) <= CLAIM_MAX:
                 raise ValueError(f"A afirmação {number} precisa ter entre {CLAIM_MIN} e {CLAIM_MAX} caracteres (tem {len(claim)}).")
         return cleaned
+
+
+class ClaimSuggestionRequest(BaseModel):
+    # Limites do contrato da VeritAI (Noticia); o texto pode vir vazio, e então só o título é lido.
+    model_config = ConfigDict(str_strip_whitespace=True)
+    title: str = Field(min_length=1, max_length=300)
+    body: str = Field(default="", max_length=30000)
 
 
 class EvidenceLink(BaseModel):

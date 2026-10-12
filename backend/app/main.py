@@ -15,7 +15,7 @@ from .config import DB_PATH, GOOGLE_FACT_CHECK_API_KEY, PUBLISHER_KEY, REVIEWER_
 from .db import article_record, connection, init_db, now
 from .fop import compare, verdict
 from .retrieval import RetrievedSource, fetch_page, search_sources
-from .schemas import ArticleCreate, EvidenceLink, ReviewDecision
+from .schemas import CLAIM_COUNT, ArticleCreate, ClaimSuggestionRequest, EvidenceLink, ReviewDecision
 from .veritai_client import VeritAIErro
 
 # O contrato da VeritAI aceita até 20 evidências e 20 anexos sem texto por análise.
@@ -134,6 +134,18 @@ def create_article(payload: ArticleCreate):
         for claim in payload.claims:
             db.execute("INSERT INTO claims (article_id,text) VALUES (?,?)", (article_id, claim))
         return article_record(db, article_id)
+
+
+@app.post("/publisher/claims/suggest", dependencies=[Depends(require_publisher)])
+async def suggest_claims(payload: ClaimSuggestionRequest):
+    # Só propõe: as candidatas voltam ao formulário e o publisher escolhe e edita antes de criar o rascunho.
+    if config.VERITAI_MODO != "servico":
+        raise HTTPException(409, "A sugestão de afirmações exige a VeritAI como serviço (VERITAI_MODO=servico).")
+    try:
+        relatorio = await veritai_client.extrair(payload.title, payload.body, CLAIM_COUNT)
+    except VeritAIErro as exc:
+        raise HTTPException(502, str(exc)) from exc
+    return relatorio.model_dump()
 
 
 def ensure_editable(article):
