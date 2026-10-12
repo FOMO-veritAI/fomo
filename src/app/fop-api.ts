@@ -47,6 +47,23 @@ export interface VeritaiRelatorioAfirmacao {
   limitacoes: string[];
 }
 
+// POST /extrair: afirmações propostas por regras; o publisher escolhe e edita antes de criar o rascunho.
+export interface VeritaiAfirmacaoCandidata {
+  texto: string;
+  trecho_origem: string;
+  posicao: number;
+  pontuacao: number;
+  sinais: string[];
+  alertas: string[];
+  atribuicao: string | null;
+}
+
+export interface VeritaiRelatorioExtracao {
+  afirmacoes: VeritaiAfirmacaoCandidata[];
+  avisos: string[];
+  versoes: Record<string, string>;
+}
+
 export interface FopAnalise {
   id: number;
   modo: string;
@@ -133,6 +150,7 @@ export const fopApi = {
   published: () => request<FopPublicArticle[]>('/articles'),
   publisherList: (key: string) => request<FopArticle[]>('/publisher/articles', { headers: { 'X-Publisher-Key': key } }),
   publisherArticle: (key: string, id: number) => request<FopArticle>(`/publisher/articles/${id}`, { headers: { 'X-Publisher-Key': key } }),
+  suggestClaims: (key: string, payload: {title: string; body: string}) => request<VeritaiRelatorioExtracao>('/publisher/claims/suggest', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Publisher-Key': key }, body: JSON.stringify(payload) }),
   create: (key: string, payload: {publisher: string; title: string; summary: string; body: string; topic: string; claims: string[]}) => request<FopArticle>('/publisher/articles', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Publisher-Key': key }, body: JSON.stringify(payload) }),
   addUrl: (key: string, id: number, url: string) => request<FopArticle>(`/publisher/articles/${id}/evidence/url`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Publisher-Key': key }, body: JSON.stringify({ url }) }),
   addFile: (key: string, id: number, file: File) => {

@@ -84,3 +84,21 @@
 .review-candidates small { display: block; color: #333; margin: 2px 0 4px; }
 .review-attachments { margin: 14px 0; padding: 12px; border: 2px dashed #000; font-size: 13px; }
 .review-attachments button { margin-left: 6px; font-weight: 800; text-decoration: underline; }
+/* Sugestão de afirmações: botão na moldura FOMO; candidatas no bloco VeritAI (preto sobre branco, sem cor). */
+.claim-suggest { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; }
+.claim-suggest small { font-size: 13px; line-height: 1.5; color: #444; }
+.claim-suggestions { margin: 0 0 18px; }
+.claim-suggestions-note { margin: 10px 0 0; font-size: 13px; line-height: 1.5; color: #333; }
+.claim-suggestion-list { list-style: none; margin: 4px 0 12px; padding: 0; }
+.claim-suggestion { border-bottom: 1px solid #000; }
+.claim-suggestion:last-child { border-bottom: 0; }
+.publisher-console .claim-suggestion label { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 12px 0; font-weight: 400; cursor: pointer; }
+.publisher-console .claim-suggestion input[type="checkbox"] { flex: none; width: 20px; height: 20px; margin: 1px 0 0; padding: 0; accent-color: #000; }
+.claim-suggestion strong { display: block; font-size: 15px; line-height: 1.4; color: #000; }
+.publisher-console .claim-suggestion small { display: block; margin-top: 4px; font-size: 13px; line-height: 1.45; }
+.claim-suggestion-alerts { list-style: none; margin: 6px 0 0; padding: 0; font-size: 13px; font-weight: 600; color: #000; }
+.claim-suggestion-alerts li { margin-top: 4px; }
+@media (max-width: 680px) {
+  .claim-suggest { display: block; }
+  .claim-suggest small { display: block; }
+}

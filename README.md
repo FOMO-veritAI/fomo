@@ -33,6 +33,8 @@ Abra `http://localhost:4200` e entre em **Publicar notícia**. As chaves locais 
 | `VERITAI_TIMEOUT` | `600` | Segundos de espera pela análise; a primeira baixa os modelos. |
 | `VERITAI_BUSCAR_WEB` | `true` | Se a VeritAI busca fontes na web. Decisão do servidor: o publisher não altera. |
 
+**Sugestão de afirmações:** no formulário do publisher, o botão **Sugerir afirmações** envia o título e o texto à VeritAI (`POST /extrair`, por `POST /publisher/claims/suggest`). Ela propõe frases verificáveis por regras, sem modelo de linguagem, com sinais e alertas (por exemplo, "sem período" ou "depende da frase anterior"). Nada vem marcado: o publisher escolhe as candidatas, que vão para o campo de afirmações, onde ainda podem ser editadas antes de criar o rascunho. A sugestão não cria rascunho nem analisa nada e só existe com `VERITAI_MODO=servico`.
+
 O FOMO extrai o texto de PDF e TXT e envia à VeritAI a notícia (título, texto e data do pedido de verificação, no fuso de São Paulo), as afirmações, as evidências com texto e a quantidade de anexos sem texto. O relatório completo e as versões dos modelos de cada análise ficam na tabela `analises`. Se a VeritAI estiver fora do ar ou devolver algo fora do contrato, a notícia vai para **Erro na análise** e pode ser reenviada.
 
 ### Estados e revisão

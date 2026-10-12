@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, EventEmitter, inject, OnDestroy, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { fopApi, FopArticle, FopClaim, FopEvidence, FopStatus, VeritaiRelatorioAfirmacao } from '../fop-api';
+import { fopApi, FopArticle, FopClaim, FopEvidence, FopStatus, VeritaiAfirmacaoCandidata, VeritaiRelatorioAfirmacao } from '../fop-api';
 
 // Mesmos limites do backend e do contrato da VeritAI.
 const CLAIM_MIN = 10;
@@ -35,6 +35,10 @@ export class PublisherConsoleComponent implements OnDestroy {
   articles: FopArticle[] = [];
   queue: FopArticle[] = [];
   current: FopArticle | null = null;
+  // Sugestões do POST /extrair: nada vem marcado; o publisher escolhe, e o que escolher vai para o campo, onde ainda pode editar.
+  suggestions: VeritaiAfirmacaoCandidata[] = [];
+  suggestionNotices: string[] = [];
+  chosen = new Set<number>();
   busy = false;
   error = '';
   message = '';
@@ -117,6 +121,37 @@ export class PublisherConsoleComponent implements OnDestroy {
     await this.run(async () => { this.articles = await fopApi.publisherList(this.publisherKey); this.message = 'Notícias atualizadas.'; });
   }
 
+  async suggest(): Promise<void> {
+    await this.run(async () => {
+      const report = await fopApi.suggestClaims(this.publisherKey, { title: this.title, body: this.body });
+      this.suggestions = report.afirmacoes;
+      this.suggestionNotices = report.avisos;
+      this.chosen = new Set();
+      this.message = report.afirmacoes.length
+        ? `A VeritAI propôs ${report.afirmacoes.length} afirmação(ões). Escolha as que valem verificar e revise cada uma.`
+        : 'A VeritAI não encontrou frases verificáveis no texto. Escreva as afirmações à mão.';
+    });
+  }
+
+  toggleSuggestion(index: number): void {
+    if (this.chosen.has(index)) this.chosen.delete(index);
+    else this.chosen.add(index);
+  }
+
+  useSuggestions(): void {
+    const current = this.claimList;
+    const added = this.suggestions.filter((_, index) => this.chosen.has(index)).map((item) => item.texto).filter((text) => !current.includes(text));
+    this.claims = [...current, ...added].join('\n');
+    this.discardSuggestions();
+    this.message = `${added.length} afirmação(ões) levada(s) para o campo abaixo. Edite o que for preciso antes de criar o rascunho.`;
+  }
+
+  discardSuggestions(): void {
+    this.suggestions = [];
+    this.suggestionNotices = [];
+    this.chosen = new Set();
+  }
+
   async create(): Promise<void> {
     const claimList = this.claimList;
     if (!claimList.length || this.claimProblems.length) {
@@ -126,6 +161,7 @@ export class PublisherConsoleComponent implements OnDestroy {
     await this.run(async () => {
       this.current = await fopApi.create(this.publisherKey, { publisher: this.publisher, title: this.title, summary: this.summary, body: this.body, topic: this.topic, claims: claimList });
       this.articles.unshift(this.current);
+      this.discardSuggestions();
       this.message = 'Rascunho criado. Agora você pode acrescentar fontes ou iniciar a verificação.';
     });
   }

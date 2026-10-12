@@ -12,7 +12,25 @@
       <label>Título<input name="title" [(ngModel)]="title" required minlength="12" placeholder="Título da notícia" /></label>
       <label>Resumo<textarea name="summary" [(ngModel)]="summary" required minlength="20" rows="3" placeholder="O que aconteceu?" ></textarea></label>
       <label>Texto da notícia<textarea name="body" [(ngModel)]="body" required minlength="30" rows="7" placeholder="Texto completo para publicação"></textarea></label>
-      <label>Afirmações a verificar <small>Uma por linha, até oito, cada uma com 10 a 500 caracteres.</small><textarea name="claims" [(ngModel)]="claims" required rows="4" placeholder="O projeto prevê três parques.&#10;A obra começa em outubro."></textarea></label>
+      <div class="claim-suggest"><button class="button-secondary" type="button" (click)="suggest()" [disabled]="busy || !publisherKey || !title.trim()"><app-icon name="spark" /> Sugerir afirmações</button><small>A VeritAI lê o título e o texto e propõe frases verificáveis, por regras. Nada é analisado até você criar o rascunho e enviar.</small></div>
+      @if (suggestions.length) {
+        <section class="veritai-block claim-suggestions" aria-label="Afirmações sugeridas pela VeritAI">
+          <header class="veritai-block-head"><h4 class="veritai-block-title">Afirmações sugeridas</h4><app-veritai-mark [caption]="true" /></header>
+          @for (aviso of suggestionNotices; track $index) { <p class="claim-suggestions-note">{{ aviso }}</p> }
+          <ul class="claim-suggestion-list">
+            @for (item of suggestions; track $index; let index = $index) {
+              <li class="claim-suggestion"><label><input type="checkbox" [checked]="chosen.has(index)" (change)="toggleSuggestion(index)" /><span>
+                <strong>{{ item.texto }}</strong>
+                @if (item.texto !== item.trecho_origem) { <small>Na notícia: “{{ item.trecho_origem }}”</small> }
+                <small>{{ item.posicao === 0 ? 'Título' : 'Frase ' + item.posicao }} · {{ item.sinais.join(' · ') }}</small>
+                @if (item.alertas.length) { <ul class="claim-suggestion-alerts">@for (alerta of item.alertas; track alerta) { <li><span class="relation-icon" aria-hidden="true">!</span>{{ alerta }}</li> }</ul> }
+              </span></label></li>
+            }
+          </ul>
+          <div class="review-actions"><button class="button-secondary" type="button" (click)="useSuggestions()" [disabled]="!chosen.size">Usar as escolhidas ({{ chosen.size }})</button><button class="button-secondary" type="button" (click)="discardSuggestions()">Descartar sugestões</button></div>
+        </section>
+      }
+      <label>Afirmações a verificar <small>Uma por linha, até oito, cada uma com 10 a 500 caracteres. Escreva à mão ou use as sugestões acima.</small><textarea name="claims" [(ngModel)]="claims" required rows="4" placeholder="O projeto prevê três parques.&#10;A obra começa em outubro."></textarea></label>
       @if (claimProblems.length) { <ul class="console-field-errors" role="alert">@for (problem of claimProblems; track problem) { <li>{{ problem }}</li> }</ul> }
       <button class="button-primary" type="submit" [disabled]="busy || !publisherKey || !claimList.length || claimProblems.length > 0"><app-icon name="document" /> Criar rascunho</button>
     </form>

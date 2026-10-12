@@ -12,13 +12,13 @@ Contexto acadêmico: Challenge 1 (Fake News / Desinformação) de uma residênci
 
 - **Frontend** Angular (`src/`): feed do leitor, área do publisher e fila de revisão. Fala com a API em `http://127.0.0.1:8000`.
 - **API** FastAPI (`backend/app/`): notícias, afirmações, evidências, anexos, análises e decisões em SQLite (`backend/data/`).
-- **VeritAI** (outro repositório): `POST /analisar`, chamada pelo cliente `backend/app/veritai_client.py` em `VERITAI_URL` (padrão `http://127.0.0.1:8100`).
+- **VeritAI** (outro repositório): `POST /analisar` e `POST /extrair`, chamados pelo cliente `backend/app/veritai_client.py` em `VERITAI_URL` (padrão `http://127.0.0.1:8100`).
 
 Fluxo: `DRAFT` → `VERIFYING` → `NEEDS_EVIDENCE` (alguma afirmação sem evidência suficiente) ou `AWAITING_REVIEW` (todas as demais, inclusive com afirmação contradita) ou `ERROR` (falha da VeritAI) → decisão do revisor: `PUBLISHED`, `REJECTED` ou `NEEDS_EVIDENCE`.
 
 ## Estado atual (diferencie sempre implementado de planejado)
 
-Implementado: cadastro de notícias com até 8 afirmações de 10 a 500 caracteres; evidências por link público (HTML) e por arquivo (TXT e PDF com texto extraído no FOMO; PNG e JPG só para conferência humana); chaves locais de publisher e revisor em `backend/.env`; integração com a VeritAI por HTTP (`VERITAI_MODO=servico`, padrão); relatório completo e `versoes` de cada análise guardados na tabela `analises`; revisão humana obrigatória; feed com o texto público por afirmação e as fontes.
+Implementado: cadastro de notícias com até 8 afirmações de 10 a 500 caracteres; sugestão de afirmações pela VeritAI (`POST /publisher/claims/suggest` → `POST /extrair`), que só propõe: nada vem marcado, e o publisher escolhe e edita antes de criar o rascunho; evidências por link público (HTML) e por arquivo (TXT e PDF com texto extraído no FOMO; PNG e JPG só para conferência humana); chaves locais de publisher e revisor em `backend/.env`; integração com a VeritAI por HTTP (`VERITAI_MODO=servico`, padrão); relatório completo e `versoes` de cada análise guardados na tabela `analises`; revisão humana obrigatória; feed com o texto público por afirmação e as fontes.
 
 Mantido por compatibilidade: o pipeline antigo embutido (`fop.py` e `retrieval.py`, similaridade + NLI locais), ativado com `VERITAI_MODO=embutido`. Ele não produz relatório da VeritAI e será removido quando o serviço estiver estável. O status `BLOCKED` não é mais gerado; existe só para registros antigos, que podem ser reenviados para análise.
 
