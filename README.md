@@ -28,7 +28,7 @@ Abra `http://localhost:4200` e entre em **Publicar notícia**. As chaves locais 
 
 | Variável | Padrão | Para quê |
 |---|---|---|
-| `VERITAI_MODO` | `servico` | `servico` chama a VeritAI por HTTP; `embutido` usa o pipeline antigo (`fop.py` e `retrieval.py`), mantido por compatibilidade. |
+| `VERITAI_MODO` | `servico` | `servico` chama a VeritAI por HTTP; `embutido` usa o pipeline antigo (`fop.py` e `retrieval.py`), mantido por compatibilidade, e exige `pip install -r backend/requirements-embutido.txt` (torch e modelos locais). |
 | `VERITAI_URL` | `http://127.0.0.1:8100` | Endereço da VeritAI. |
 | `VERITAI_TIMEOUT` | `600` | Segundos de espera pela análise; a primeira baixa os modelos. |
 | `VERITAI_BUSCAR_WEB` | `true` | Se a VeritAI busca fontes na web. Decisão do servidor: o publisher não altera. |
@@ -51,17 +51,24 @@ As notícias da seção **Exemplos visuais** permanecem fictícias para demonstr
 
 ## Frontend no GitHub Pages
 
-O workflow `.github/workflows/pages.yml` publica só o frontend em `https://fomo-veritai.github.io/fomo/` a cada push em `main`. O GitHub Pages serve arquivos estáticos: a API FastAPI e a VeritAI não rodam lá. Ainda não há API pública (hospedagem é um passo planejado).
+O workflow `.github/workflows/pages.yml` publica só o frontend em `https://fomo-veritai.github.io/fomo/` a cada push em `main`. O GitHub Pages serve arquivos estáticos: a API FastAPI e a VeritAI não rodam lá. Para hospedar a API com HTTPS, veja **Deploy** abaixo.
 
 - Endereço da API: variável do repositório `FOMO_API_URL` (Settings → Secrets and variables → Actions → Variables). Sem ela, o build usa `http://127.0.0.1:8000`, e a página publicada só mostra notícias publicadas para quem roda a API na própria máquina. Os **Exemplos visuais** aparecem sempre.
 - CORS: a API só aceita as origens locais. Para aceitar a página publicada, inicie a API com `FOMO_CORS_ORIGINS=https://fomo-veritai.github.io` (várias origens separadas por vírgula).
 - Uma página HTTPS chamando `http://127.0.0.1:8000` pode exigir que o navegador permita acesso à rede local. Uma API pública precisa de HTTPS.
+
+## Deploy
+
+`deploy/` sobe tudo numa máquina com Docker: Caddy (frontend, HTTPS automático e a API em `/api`, na mesma origem), a API do FOMO e a VeritAI com os modelos dentro da imagem, só na rede interna. Passo a passo, requisitos (8 GB de RAM com a V1) e operação em [`deploy/README.md`](deploy/README.md).
+
+A imagem da API não leva torch: no modo serviço, o pipeline embutido nem é carregado. Se a API reiniciar no meio de uma análise, a notícia vai para **Erro na análise** e pode ser reenviada.
 
 ## Verificação do projeto
 
 ```bash
 .venv/bin/python -m unittest discover -s backend/tests -v
 npm run build
+docker build --target teste .     # a mesma suíte com Python 3.12, sem torch, como na imagem
 ```
 
 Os testes simulam a VeritAI com `httpx.MockTransport` e não dependem do serviço real.

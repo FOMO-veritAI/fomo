@@ -1,0 +1,26 @@
+# Uma origem só: o frontend em / e a API do FOMO em /api, sem CORS. A VeritAI não passa por aqui.
+# DOMINIO com nome real (ex.: fomo.exemplo.com.br) → certificado HTTPS automático do Let's Encrypt;
+# "http://localhost" → só HTTP, para testar na própria máquina.
+{$DOMINIO:localhost} {
+	encode zstd gzip
+
+	handle_path /api/* {
+		# Anexos do publisher têm até 5 MB (o backend recusa acima disso).
+		request_body {
+			max_size 6MB
+		}
+		reverse_proxy fomo-api:8000
+	}
+
+	handle {
+		root * /srv/fomo
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}

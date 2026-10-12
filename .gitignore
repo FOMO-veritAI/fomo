@@ -9,6 +9,8 @@
 # Node
 /node_modules
 /backend/.env
+/deploy/.env
+/deploy/base/
 /backend/data/
 /.venv/
 __pycache__/

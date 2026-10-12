@@ -1,0 +1,92 @@
+# FOMO + VeritAI numa máquina só. A partir de fomo/deploy/:
+#   python criar_env.py              # cria .env com chaves aleatórias (uma vez)
+#   docker compose up -d --build
+# Precisa do repositório veritai ao lado do fomo (../../veritai). Passo a passo e base de evidências: README.md.
+name: fomo
+
+services:
+  veritai:
+    build:
+      context: ../../veritai
+      args:
+        # Modelos do perfil dentro da imagem: nenhum download do Hugging Face ao ligar.
+        PERFIL_EMBUTIDO: ${VERITAI_PERFIL:-v1}
+    image: veritai:deploy
+    environment:
+      VERITAI_PERFIL: ${VERITAI_PERFIL:-v1}
+      HF_HUB_OFFLINE: "1"
+      GOOGLE_FACT_CHECK_API_KEY: ${GOOGLE_FACT_CHECK_API_KEY:-}
+    volumes:
+      - hf-cache:/cache        # recebe a cópia dos modelos da imagem na primeira vez; um volume por perfil
+      - veritai-data:/data     # base própria SQLite (VERITAI_BASE=/data/veritai.sqlite3)
+    # Sem "ports": a VeritAI não tem autenticação e só é alcançada pela API do FOMO, na rede interna do compose.
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+
+  fomo-api:
+    build:
+      context: ..
+      target: api
+    image: fomo-api:deploy
+    environment:
+      TAKTA_PUBLISHER_KEY: ${TAKTA_PUBLISHER_KEY:?defina em deploy/.env (python criar_env.py)}
+      TAKTA_REVIEWER_KEY: ${TAKTA_REVIEWER_KEY:?defina em deploy/.env (python criar_env.py)}
+      VERITAI_URL: http://veritai:8100
+      # Desligada por padrão: ligada, manda termos de notícias ainda não publicadas ao Bing e ao GDELT (decisão do grupo).
+      VERITAI_BUSCAR_WEB: ${VERITAI_BUSCAR_WEB:-false}
+      # Só se o frontend ficar em outra origem, como o GitHub Pages (https://fomo-veritai.github.io).
+      FOMO_CORS_ORIGINS: ${FOMO_CORS_ORIGINS:-}
+    volumes:
+      - fomo-data:/app/backend/data   # banco (takta.sqlite3) e anexos do publisher
+    read_only: true
+    tmpfs:
+      - /tmp
+    depends_on:
+      veritai:
+        condition: service_healthy
+    # Uma réplica só: SQLite e análise em segundo plano no mesmo processo.
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ..
+      target: web
+    image: fomo-web:deploy
+    environment:
+      DOMINIO: ${DOMINIO:-localhost}
+    ports:
+      - "${PORTA_HTTP:-80}:80"
+      - "${PORTA_HTTPS:-443}:443"
+    volumes:
+      - caddy-data:/data       # certificados HTTPS
+      - caddy-config:/config
+    depends_on:
+      fomo-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Tarefa avulsa: copia deploy/base/veritai.sqlite3 para o volume da VeritAI (README, "Base de evidências").
+  #   docker compose --profile base run --rm carregar-base && docker compose restart veritai
+  carregar-base:
+    profiles: [base]
+    image: veritai:deploy
+    user: root
+    volumes:
+      - ./base:/entrada
+      - veritai-data:/data
+    # Cópia pela API de backup do SQLite (respeita o WAL); o arquivo fica com o usuário da VeritAI (10001).
+    command:
+      - python
+      - -c
+      - "import os, sqlite3; o = sqlite3.connect('/entrada/veritai.sqlite3'); d = sqlite3.connect('/data/veritai.sqlite3'); o.backup(d); d.close(); o.close(); os.chown('/data/veritai.sqlite3', 10001, 10001); print('Base copiada para o volume da VeritAI.')"
+
+volumes:
+  hf-cache:
+    # Com o nome do perfil: trocar de v1 para v0 cria outro volume, copiado da imagem nova (o antigo não seria atualizado).
+    name: fomo_hf-cache-${VERITAI_PERFIL:-v1}
+  veritai-data:
+  fomo-data:
+  caddy-data:
+  caddy-config:

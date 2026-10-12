@@ -1,0 +1,31 @@
+# Segredos e ambientes locais
+.env
+.env.*
+backend/.env
+deploy/.env
+.venv/
+venv/
+
+# Dados locais: banco, anexos e bases
+backend/data/
+*.sqlite3
+*.sqlite3-*
+
+# Dependências e saídas de build (refeitas dentro da imagem)
+node_modules/
+dist/
+.angular/
+out-tsc/
+tmp/
+
+# O que não entra em nenhuma imagem
+.git/
+.github/
+.claude/
+.vscode/
+.idea/
+docs/
+legacy-static/
+**/__pycache__/
+**/*.pyc
+.DS_Store

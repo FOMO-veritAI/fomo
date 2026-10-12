@@ -20,7 +20,7 @@ Fluxo: `DRAFT` → `VERIFYING` → `NEEDS_EVIDENCE` (alguma afirmação sem evid
 
 Implementado: cadastro de notícias com até 8 afirmações de 10 a 500 caracteres; sugestão de afirmações pela VeritAI (`POST /publisher/claims/suggest` → `POST /extrair`), que só propõe: nada vem marcado, e o publisher escolhe e edita antes de criar o rascunho; evidências por link público (HTML) e por arquivo (TXT e PDF com texto extraído no FOMO; PNG e JPG só para conferência humana); chaves locais de publisher e revisor em `backend/.env`; integração com a VeritAI por HTTP (`VERITAI_MODO=servico`, padrão); relatório completo e `versoes` de cada análise guardados na tabela `analises`; revisão humana obrigatória; feed com o texto público por afirmação e as fontes.
 
-Mantido por compatibilidade: o pipeline antigo embutido (`fop.py` e `retrieval.py`, similaridade + NLI locais), ativado com `VERITAI_MODO=embutido`. Ele não produz relatório da VeritAI e será removido quando o serviço estiver estável. O status `BLOCKED` não é mais gerado; existe só para registros antigos, que podem ser reenviados para análise.
+Mantido por compatibilidade: o pipeline antigo embutido (`fop.py` e `retrieval.py`, similaridade + NLI locais), ativado com `VERITAI_MODO=embutido` e com as dependências de `backend/requirements-embutido.txt` (torch só é importado nesse modo). Ele não produz relatório da VeritAI e será removido quando o serviço estiver estável. O status `BLOCKED` não é mais gerado; existe só para registros antigos, que podem ser reenviados para análise.
 
 Planejado: identidade institucional de publishers e revisores, isolamento entre publishers, conferência de autenticidade de documentos, infraestrutura de produção.
 
@@ -68,7 +68,10 @@ python3 -m venv .venv
 npm install && npm start
 .venv/bin/python -m unittest discover -s backend/tests -v
 npm run build
+docker build --target teste .     # suíte com Python 3.12, sem torch
 ```
+
+Deploy (Docker Compose com Caddy, API e VeritAI): `deploy/README.md`. Uma réplica só da API: SQLite e análise em segundo plano no mesmo processo.
 
 A VeritAI precisa estar rodando em `VERITAI_URL` (no repositório veritai: `docker compose up -d`). Os testes simulam a VeritAI com `httpx.MockTransport` e não dependem do serviço real. Rode testes e build antes de considerar qualquer tarefa concluída e informe o resultado real.
 
