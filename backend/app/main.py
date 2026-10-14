@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from pypdf import PdfReader
 
 from . import config, veritai_client
-from .config import DB_PATH, GOOGLE_FACT_CHECK_API_KEY, PUBLISHER_KEY, REVIEWER_KEY, UPLOAD_DIR
+from .config import GOOGLE_FACT_CHECK_API_KEY, PUBLISHER_KEY, REVIEWER_KEY, UPLOAD_DIR
 from .db import article_record, connection, init_db, now
 from .fop import compare, verdict
 from .retrieval import RetrievedSource, fetch_page, search_sources
@@ -80,11 +80,11 @@ def public_record(article: dict) -> dict:
     return result
 
 
+# Público quando a demonstração usa o túnel: não expõe caminhos da máquina.
 @app.get("/health")
 def health():
     return {
         "status": "ok",
-        "database": str(DB_PATH),
         "publisher_key_configured": bool(PUBLISHER_KEY),
         "reviewer_key_configured": bool(REVIEWER_KEY),
         "google_fact_check_configured": bool(GOOGLE_FACT_CHECK_API_KEY),
