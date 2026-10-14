@@ -6,7 +6,7 @@ import { Article, CommentItem, Community, Critique, ViewName } from './models';
 import { IconComponent } from './icon/icon';
 import { NewsCardComponent } from './news-card/news-card';
 import { AudioPlayerComponent } from './audio-player/audio-player';
-import { FopPublicArticle, fopApi } from './fop-api';
+import { ApiDesligadaError, FopPublicArticle, fopApi } from './fop-api';
 import { VeritaiMarkComponent } from './veritai-mark/veritai-mark';
 import { RELACAO, RESULTADO } from './veritai-mark/veritai-icones';
 import { PublisherConsoleComponent } from './publisher-console/publisher-console';
@@ -34,6 +34,8 @@ export class App implements OnInit {
   readonly topics = ['Todos', 'Sociedade', 'Tecnologia', 'Ciência', 'Cultura', 'Planeta'];
   readonly filters = ['Todas', 'Em texto', 'Em vídeo'];
   publicArticles: FopPublicArticle[] = [];
+  apiOffline = '';
+  readonly veritaiEmbeddingsUrl = 'https://fomo-veritai.github.io/veritai/';
   readonly resultados = Object.values(RESULTADO);
   readonly apoia = RELACAO['apoia'];
   // Data do dia no fuso de São Paulo, como "TERÇA-FEIRA, 6 DE OUTUBRO".
@@ -80,8 +82,8 @@ export class App implements OnInit {
   ngOnInit(): void { void this.refreshPublished(); }
 
   async refreshPublished(): Promise<void> {
-    try { this.publicArticles = await fopApi.published(); }
-    catch { this.publicArticles = []; }
+    try { this.publicArticles = await fopApi.published(); this.apiOffline = ''; }
+    catch (error) { this.publicArticles = []; this.apiOffline = error instanceof ApiDesligadaError ? error.message : ''; }
     this.changes.markForCheck();
   }
 

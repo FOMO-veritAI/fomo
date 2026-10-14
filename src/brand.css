@@ -121,6 +121,15 @@ img { object-fit: cover; }
 .veritai-intro h3 { font-family: var(--font); font-weight: 800; font-size: 20px; line-height: 1.2; color: #000; }
 .veritai-intro p { color: #333; }
 .veritai-intro button { color: #000; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.veritai-embeddings-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: #000; font-size: 14px; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.veritai-embeddings-link svg { width: 13px; height: 13px; }
+.veritai-embeddings-link.mobile-only { display: none; }
+@media (max-width: 1080px) { .veritai-embeddings-link.mobile-only { display: inline-flex; } }
+.api-offline-note { display: flex; align-items: flex-start; gap: 8px; margin: 22px 0 0; padding: 12px 14px; background: #fff; border: 2px solid #000; color: #000; font-size: 14px; }
+.api-offline-note svg { width: 17px; height: 17px; margin-top: 2px; }
+/* Fica aqui porque o CSS do console já passa do orçamento por componente. */
+.verifying-note { display: flex; align-items: flex-start; gap: 8px; margin: 14px 0; padding: 10px 12px; border: 2px dashed #000; background: #fff; color: #000; font-size: 14px; }
+.verifying-note svg { width: 17px; height: 17px; margin-top: 2px; }
 .right-footer, .right-footer .demo-label { color: #555; }
 
 /* Painéis laterais */

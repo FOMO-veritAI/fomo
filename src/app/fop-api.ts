@@ -115,13 +115,22 @@ function errorDetail(detail: unknown): string {
   return typeof detail === 'string' ? detail : '';
 }
 
+export const API_DESLIGADA = 'A API do FOMO está desligada no momento; a demonstração roda só em horários combinados.';
+export class ApiDesligadaError extends Error {
+  constructor() { super(API_DESLIGADA); }
+}
+
+// O túnel da demonstração responde 502/503/504/530 quando a API por trás dele está desligada.
+const STATUS_API_DESLIGADA = new Set([502, 503, 504, 530]);
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API}${path}`, options);
   } catch {
-    throw new Error(`API do FOMO indisponível em ${API}. Inicie o servidor Python ou confira o endereço.`);
+    throw new ApiDesligadaError();
   }
+  if (STATUS_API_DESLIGADA.has(response.status)) throw new ApiDesligadaError();
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
     throw new Error(errorDetail(data.detail) || `Erro ${response.status} ao consultar a API.`);
@@ -143,7 +152,8 @@ export const fopApi = {
   verify: (key: string, id: number) => request<{id: number; status: FopStatus}>(`/publisher/articles/${id}/verify`, { method: 'POST', headers: { 'X-Publisher-Key': key } }),
   reviewList: (key: string) => request<FopArticle[]>('/review/articles', { headers: { 'X-Reviewer-Key': key } }),
   async downloadAttachment(key: string, attachment: FopEvidence): Promise<void> {
-    const response = await fetch(`${API}/review/attachments/${attachment.id}`, { headers: { 'X-Reviewer-Key': key } });
+    const response = await fetch(`${API}/review/attachments/${attachment.id}`, { headers: { 'X-Reviewer-Key': key } }).catch(() => { throw new ApiDesligadaError(); });
+    if (STATUS_API_DESLIGADA.has(response.status)) throw new ApiDesligadaError();
     if (!response.ok) throw new Error('Não foi possível baixar o anexo.');
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
