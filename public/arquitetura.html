@@ -71,10 +71,13 @@ button{cursor:pointer}
 .zone{position:absolute;border:2px solid var(--ink);border-radius:14px;background:var(--zone)}
 .zone.dashed{border-style:dashed}
 .zone.verit{border-width:1.5px;border-radius:0}
-.zlabel{position:absolute;z-index:4;display:flex;align-items:baseline;gap:10px;padding:6px 14px 4px;background:var(--ink);color:var(--bg);
+.zlabel{position:absolute;z-index:4;border:0;cursor:pointer;text-align:left;display:flex;align-items:baseline;gap:10px;padding:6px 14px 4px;background:var(--ink);color:var(--bg);
   transform:rotate(-1.2deg);transform-origin:0 100%;box-shadow:5px 5px 0 var(--accent);white-space:nowrap;transition:transform .25s}
 .zlabel b{font:400 32px/1 var(--display);letter-spacing:.04em}
 .zlabel small{font:600 12.5px/1 var(--font)}
+.zlabel .zmore{font:800 11px/1 var(--font);letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;border:1.5px solid var(--bg);border-radius:999px;font-style:normal}
+.zlabel:hover{box-shadow:7px 7px 0 var(--accent)}
+.zlabel:hover .zmore{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .zlabel.verit b{font:600 italic 32px/1 var(--verit);letter-spacing:0}
 .zlabel.verit b span{font:900 normal 28px/1 var(--font)}
 .zrepo{position:absolute;right:16px;top:12px;font:600 11.5px var(--mono);color:var(--muted)}
@@ -185,9 +188,17 @@ button{cursor:pointer}
 .ditem span{display:block;margin-top:3px;font:400 13px/1.45 var(--font);color:var(--muted)}
 
 /* Fluxos guiados */
-#dock{position:absolute;z-index:12;bottom:16px;left:var(--dx,50%);transform:translateX(-50%);width:min(780px,calc(var(--aw,100vw) - 32px));
-  background:var(--paper);border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:12px 16px 14px;border-radius:4px}
-#dock.mini{width:auto;padding:0;border:0;box-shadow:none;background:transparent}
+/* Fechada, só a alça aparece; abre ao clicar ou ao passar o mouse. Durante um fluxo, fica aberta. */
+#dock{position:absolute;z-index:12;bottom:0;left:var(--dx,50%);transform:translate(-50%,calc(100% - 44px));width:min(780px,calc(var(--aw,100vw) - 32px));
+  background:var(--paper);border:3px solid var(--ink);border-bottom:0;box-shadow:6px 0 0 var(--ink);padding:0 16px 14px;border-radius:8px 8px 0 0;transition:transform .28s ease}
+#dock.open,#dock.touring{transform:translate(-50%,0)}
+@media (hover:hover){#dock:not(.touring):hover,#dock:not(.touring):focus-within{transform:translate(-50%,0)}}
+.handle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;height:41px;padding:0;border:0;background:none;text-align:left;margin-bottom:10px}
+.handle b{font:400 22px/1 var(--display);letter-spacing:.04em}
+.handle i{font:800 12px/1 var(--font);font-style:normal;transition:transform .28s}
+#dock.open .handle i{transform:rotate(180deg)}
+@media (hover:hover){#dock:not(.touring):hover .handle i{transform:rotate(180deg)}}
+#dock.touring{padding-top:12px}
 .dh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px}
 .dh b{font:400 22px/1 var(--display);letter-spacing:.04em}
 .dh .eb{font-size:11px}
@@ -205,8 +216,8 @@ button{cursor:pointer}
 .btn.primary{background:var(--accent);color:var(--on-accent)}
 .btn.link{border-color:transparent;background:transparent;text-decoration:underline;text-underline-offset:3px}
 
-/* Legenda, minimapa e dica */
-#legend{position:absolute;z-index:11;right:16px;bottom:16px;width:262px;background:var(--paper);border:2px solid var(--ink);border-radius:4px;padding:10px 12px 12px;font:500 12px/1.3 var(--font)}
+/* Legenda e dica */
+#legend{position:absolute;z-index:13;right:16px;top:14px;width:262px;background:var(--paper);border:2px solid var(--ink);border-radius:4px;padding:10px 12px 12px;font:500 12px/1.3 var(--font)}
 #legend h3{margin:0 0 6px;font:800 11px/1.2 var(--font);letter-spacing:.1em;text-transform:uppercase}
 .lg{display:grid;grid-template-columns:44px 1fr;align-items:center;gap:5px 8px;margin-bottom:10px}
 .lg svg{width:44px;height:12px;overflow:visible}
@@ -220,19 +231,15 @@ button{cursor:pointer}
 .sw.k-infra{background-image:radial-gradient(var(--ink) .8px,transparent 1px);background-size:4px 4px}
 .sw.k-externo{border-style:dashed;background:var(--bg)}
 .lgnote{margin:0;color:var(--muted);font-size:11.5px}
-#mini{position:absolute;z-index:11;left:16px;bottom:16px;width:220px;height:122px;background:var(--paper);border:2px solid var(--ink);border-radius:4px;overflow:hidden;cursor:pointer;touch-action:none}
-#mini .mz{position:absolute;border:1px solid var(--muted);background:var(--bg)}
-#mini .mv{position:absolute;border:2px solid var(--accent);background:rgba(255,51,51,.12)}
 .hint{position:absolute;z-index:10;left:16px;top:14px;padding:6px 10px;background:var(--paper);border:1.5px solid var(--ink);border-radius:999px;font:600 12px/1.2 var(--font);pointer-events:none}
 
 @media (max-width:760px){
-  .titles small,.hint,#mini{display:none}
+  .titles small,.hint{display:none}
   .burst{font-size:21px}.vmark em{font-size:19px}.vmark b{font-size:16px}
   .tools{margin-left:0}
   .panel{top:auto;height:62%;width:100%;border-left:0;border-right:0;border-top:3px solid var(--ink)}
   #decs{width:100%;border-right:0}
-  #legend{right:8px;bottom:8px;width:230px}
-  #dock{bottom:10px}
+  #legend{right:8px;top:8px;width:230px}
   .cap{font-size:14.5px}
 }
 @media (prefers-reduced-motion:reduce){.edge.hot{animation:none}.card,.zlabel{transition:none}.card:hover{transform:none}}
@@ -257,7 +264,7 @@ button{cursor:pointer}
         <button type="button" id="zIn" aria-label="Aproximar">+</button>
       </div>
       <button class="btn" id="bFit" type="button">Ver tudo</button>
-      <button class="btn" id="bLeg" type="button" aria-pressed="true">Legenda</button>
+      <button class="btn" id="bLeg" type="button" aria-pressed="false">Legenda</button>
       <button class="btn" id="bFull" type="button" hidden>Tela cheia</button>
     </div>
   </header>
@@ -276,7 +283,7 @@ button{cursor:pointer}
     </div>
     <div class="hint" id="hint">Arraste para mover · role para aproximar · clique num card</div>
 
-    <div id="legend">
+    <div id="legend" hidden>
       <h3>Cards</h3>
       <div class="lg">
         <span class="sw k-pessoa"></span><span>Pessoa</span>
@@ -293,7 +300,6 @@ button{cursor:pointer}
       <p class="lgnote">A seta vai de quem envia para quem recebe. O rótulo diz o que passa.</p>
     </div>
 
-    <div id="mini" aria-label="Minimapa: clique para ir a uma parte do mapa" role="button" tabindex="0"></div>
 
     <aside class="panel" id="decs" hidden aria-label="Decisões de arquitetura">
       <div class="ph"><b>Decisões de arquitetura</b><button class="btn icon" type="button" data-close="decs" aria-label="Fechar decisões">×</button></div>
@@ -315,13 +321,13 @@ button{cursor:pointer}
 const W = 3560, H = 1960;
 
 const ZONES = {
-  pessoas: {x:40,  y:110,  w:330,  h:1045, t:'Pessoas', s:'quem usa'},
-  front:   {x:440, y:110,  w:650,  h:1045, t:'Frontend', s:'Angular 22, no navegador', repo:'repositório fomo'},
-  api:     {x:1250,y:110,  w:660,  h:1045, t:'API do FOMO', s:'FastAPI, Python', repo:'repositório fomo'},
-  veritai: {x:2050,y:110,  w:1060, h:1130, t:'VeritAI', s:'serviço de IA, só CPU', repo:'repositório veritai', verit:true},
-  ext:     {x:3180,y:110,  w:345,  h:1130, t:'Fora do sistema', s:'serviços externos', dashed:true},
-  infra:   {x:40,  y:1215, w:1870, h:560,  t:'Infraestrutura', s:'Docker, AWS e GitHub', repo:'fomo/deploy · infra/ · veritai/deploy'},
-  dados:   {x:2050,y:1290, w:1475, h:600,  t:'Dados e avaliação', s:'como a base e os números foram feitos', repo:'repositório veritai-dados'},
+  pessoas: {x:40,  y:110,  w:330,  h:1045, t:'Pessoas', s:'quem usa', st:['Navegador comum, sem instalar nada','Leitor sem login','Publisher e revisor com chave própria']},
+  front:   {x:440, y:110,  w:650,  h:1045, t:'Frontend', s:'Angular 22, no navegador', repo:'repositório fomo', st:['Angular 22, componentes standalone, TypeScript','CSS próprio da identidade FOMO (Bangers, Inter, Newsreader)','fetch nativo num cliente só (fop-api.ts)','Build estático com o Angular CLI (Node 24)']},
+  api:     {x:1250,y:110,  w:660,  h:1045, t:'API do FOMO', s:'FastAPI, Python', repo:'repositório fomo', st:['Python 3.12, FastAPI e Uvicorn','Pydantic: pedidos e contrato da VeritAI','SQLite (sqlite3 da biblioteca padrão)','httpx: chamadas à VeritAI e leitura de links','pypdf e BeautifulSoup: texto de PDF e HTML','python-multipart: upload de anexos']},
+  veritai: {x:2050,y:110,  w:1060, h:1130, t:'VeritAI', s:'serviço de IA, só CPU', repo:'repositório veritai', verit:true, st:['API: FastAPI, Uvicorn e Pydantic','Embeddings: sentence-transformers, multilingual-e5-base (V1) ou MiniLM-L12 (V0)','NLI: transformers, mDeBERTa-v3-base (V1) ou MiniLMv2-L6 (V0), PyTorch só CPU','Ranking: BM25 no SQLite FTS5 + vetores (NumPy), fundidos por RRF','Texto: regras em Python (re) para frases, datas, extração e verificador','Web: httpx e BeautifulSoup','Testes: pytest (232)']},
+  ext:     {x:3180,y:110,  w:345,  h:1130, t:'Fora do sistema', s:'serviços externos', dashed:true, st:['Bing News RSS e GDELT: busca de notícias','Google Fact Check Tools API: checagens (ClaimReview)','Hugging Face Hub: pesos dos modelos','Sites e API do IBGE, INEP, Agência Gov e Agência Brasil']},
+  infra:   {x:40,  y:1215, w:1870, h:560,  t:'Infraestrutura', s:'Docker, AWS e GitHub', repo:'fomo/deploy · infra/ · veritai/deploy', st:['Docker e Docker Compose','Caddy, com HTTPS do Let’s Encrypt','DuckDNS: domínio','AWS EC2, criada com Terraform e cloud-init','GitHub Actions, GHCR e GitHub Pages','Preparados: SageMaker (boto3), Kubernetes (k3s), CloudFormation']},
+  dados:   {x:2050,y:1290, w:1475, h:600,  t:'Dados e avaliação', s:'como a base e os números foram feitos', repo:'repositório veritai-dados', st:['Scripts Python: sqlite3, csv, json, argparse','Jupyter e Google Colab (EDA)','pandas, NumPy, matplotlib e seaborn','scikit-learn: métricas e o modelo do ASSIN 2','openpyxl: planilhas de revisão (.xlsx)']},
 };
 
 const I = {
@@ -749,11 +755,11 @@ const byId = Object.fromEntries(CARDS.map(c => [c.id, c]));
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const coarse = matchMedia('(pointer: coarse)').matches;
 const stage = $('#stage'), vp = $('#vp'), world = $('#world'), svg = $('#edges');
-const drawer = $('#drawer'), decs = $('#decs'), dock = $('#dock'), legend = $('#legend'), mini = $('#mini');
+const drawer = $('#drawer'), decs = $('#decs'), dock = $('#dock'), legend = $('#legend');
 const NS = 'http://www.w3.org/2000/svg';
 const zoneLabels = [];
 const clampK = k => Math.min(2.2, Math.max(.12, k));
-const state = {sel:null, tour:null, mini:false, touched:false};
+const state = {sel:null, tour:null, open:false, touched:false};
 
 /* ---------- zonas e cards ---------- */
 for (const [id, z] of Object.entries(ZONES)) {
@@ -762,10 +768,12 @@ for (const [id, z] of Object.entries(ZONES)) {
   d.style.cssText = `left:${z.x}px;top:${z.y}px;width:${z.w}px;height:${z.h}px`;
   d.innerHTML = z.repo ? `<span class="zrepo">${z.repo}</span>` : '';
   world.insertBefore(d, svg);
-  const lb = document.createElement('div');
-  lb.className = 'zlabel' + (z.verit ? ' verit' : '');
+  const lb = document.createElement('button');
+  lb.type = 'button'; lb.className = 'zlabel' + (z.verit ? ' verit' : '');
   lb.style.cssText = `left:${z.x + 22}px;top:${z.y - 24}px`;
-  lb.innerHTML = `<b>${z.verit ? 'Verit<span>AI</span>' : z.t}</b><small>${z.s}</small>`;
+  lb.innerHTML = `<b>${z.verit ? 'Verit<span>AI</span>' : z.t}</b><small>${z.s}</small><i class="zmore">stack</i>`;
+  lb.setAttribute('aria-label', `${z.t}: ver as ferramentas usadas`);
+  lb.addEventListener('click', () => openZone(id));
   zoneLabels.push(lb);
   const o = document.createElement('option'); o.value = id; o.textContent = z.t; $('#goto').appendChild(o);
 }
@@ -912,7 +920,6 @@ function apply() {
   vp.style.backgroundPosition = `${cam.x}px ${cam.y}px`;
   world.classList.toggle('far', cam.k < .58);
   $('#zVal').textContent = Math.round(cam.k * 100) + '%';
-  drawMini();
 }
 function flyTo(t, ms = 560) {
   cancelAnimationFrame(anim);
@@ -931,7 +938,7 @@ function area() {
   let x0 = 0, x1 = stage.clientWidth, y1 = stage.clientHeight;
   if (!drawer.hidden) { if (wide()) x1 -= drawer.offsetWidth; else y1 -= drawer.offsetHeight; }
   if (!decs.hidden && wide()) x0 += decs.offsetWidth;
-  if (!dock.classList.contains('mini')) y1 -= dock.offsetHeight + 24;
+  y1 -= state.tour ? dock.offsetHeight + 16 : 52;
   return {x:x0, y:0, w:Math.max(80, x1 - x0), h:Math.max(80, y1)};
 }
 function fitBox(b, pad = 48, kmax = 1.15) {
@@ -993,7 +1000,8 @@ function up(e) {
 vp.addEventListener('pointerup', up); vp.addEventListener('pointercancel', up);
 vp.addEventListener('click', e => {
   if (drag.moved) { e.stopPropagation(); e.preventDefault(); drag.moved = false; return; }
-  if (!e.target.closest('.card')) clearSel();
+  if (!e.target.closest('.card,.zlabel')) clearSel();
+  if (state.open) { state.open = false; renderDock(); }
 }, true);
 vp.addEventListener('wheel', e => {
   e.preventDefault(); poke(); cancelAnimationFrame(anim);
@@ -1064,6 +1072,19 @@ function openDecision(i) {
   showDrawer();
   if (!state.tour) flyTo(fitBox(boxOf(d.c), 70, 1));
 }
+function openZone(id) {
+  const z = ZONES[id], ids = CARDS.filter(c => c.z === id).map(c => c.id);
+  state.sel = null;
+  if (!state.tour) highlight(new Set(ids));
+  $('#drawerKind').textContent = 'Stack';
+  $('#drawerBody').innerHTML = `
+    <p class="d-eb">${z.repo || 'parte do mapa'}</p>
+    <h2 class="${z.verit ? 'v' : ''}">${z.t}</h2><p class="lead">${z.s}</p>
+    ${sec('Ferramentas', ul(z.st))}
+    ${sec('Cards nesta parte', `<div class="links">${ids.map(c => `<button class="lk" type="button" data-go="${c}"><span class="dir" aria-hidden="true">→</span><span><b>${byId[c].t}</b><small>${byId[c].eb}</small></span></button>`).join('')}</div>`)}`;
+  showDrawer();
+  if (!state.tour) flyTo(fitBox(zoneBox(z), 30, 1.1));
+}
 function showDrawer() { drawer.hidden = false; drawer.scrollTop = 0; layoutOverlays(); }
 function closeDrawer() { drawer.hidden = true; layoutOverlays(); if (!state.tour) clearSel(); else for (const c of CARDS) c.el.classList.remove('sel'); }
 function clearSel() { state.sel = null; if (!state.tour) highlight(null); }
@@ -1084,7 +1105,8 @@ document.addEventListener('click', e => { const c = e.target.closest('[data-clos
 
 /* ---------- fluxos guiados ---------- */
 function renderDock() {
-  dock.classList.toggle('mini', state.mini && !state.tour);
+  dock.classList.toggle('touring', !!state.tour);
+  dock.classList.toggle('open', !state.tour && state.open);
   if (state.tour) {
     const t = TOURS[state.tour.t], i = state.tour.i, s = t.steps[i], last = i === t.steps.length - 1;
     dock.innerHTML = `<div class="dh"><span class="eb">Fluxo · ${t.t}</span><span class="cnt">Passo ${i + 1} de ${t.steps.length}</span></div>
@@ -1093,22 +1115,19 @@ function renderDock() {
       <span class="dots" aria-hidden="true">${t.steps.map((_, j) => `<i class="${j === i ? 'on' : ''}"></i>`).join('')}</span>
       <button class="btn primary" type="button" data-t="next">${last ? 'Concluir' : 'Próximo →'}</button>
       <button class="btn link" type="button" data-t="end">Sair do fluxo</button></div>`;
-  } else if (state.mini) {
-    dock.innerHTML = `<button class="btn primary" type="button" data-t="open">Fluxos guiados</button>`;
   } else {
-    dock.innerHTML = `<div class="dh"><b>Percorra um fluxo</b><button class="btn link" type="button" data-t="hide">Esconder</button></div>
+    dock.innerHTML = `<button class="handle" type="button" data-t="toggle" aria-expanded="${state.open}"><b>Percorra um fluxo</b><i aria-hidden="true">▲</i></button>
       <div class="tours">${TOURS.map((t, i) => `<button type="button" data-tour="${i}"><span>${t.t}</span><small>${t.steps.length} passos</small></button>`).join('')}</div>`;
   }
   layoutOverlays();
 }
 dock.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.tour) startTour(+b.dataset.tour);
+  if (b.dataset.tour) { state.open = false; startTour(+b.dataset.tour); }
   else if (b.dataset.t === 'prev') stepTour(-1);
   else if (b.dataset.t === 'next') stepTour(1);
   else if (b.dataset.t === 'end') endTour();
-  else if (b.dataset.t === 'hide') { state.mini = true; renderDock(); }
-  else if (b.dataset.t === 'open') { state.mini = false; renderDock(); }
+  else if (b.dataset.t === 'toggle') { state.open = !state.open; renderDock(); }
 });
 function startTour(t) { state.tour = {t, i:0}; drawer.hidden = true; renderDock(); goStep(); }
 function goStep(ms) {
@@ -1130,21 +1149,6 @@ $('#lgEdges').innerHTML = EDGE_KINDS.map(([k, t]) => `<svg viewBox="0 0 44 12" a
 function toggleLegend(on) { legend.hidden = !on; $('#bLeg').setAttribute('aria-pressed', String(on)); }
 $('#bLeg').addEventListener('click', () => toggleLegend(legend.hidden));
 
-/* ---------- minimapa ---------- */
-const M = 220 / W;
-for (const z of Object.values(ZONES)) { const d = document.createElement('div'); d.className = 'mz'; d.style.cssText = `left:${z.x * M}px;top:${z.y * M}px;width:${z.w * M}px;height:${z.h * M}px`; mini.appendChild(d); }
-const mv = document.createElement('div'); mv.className = 'mv'; mini.appendChild(mv);
-function drawMini() {
-  const x = -cam.x / cam.k, y = -cam.y / cam.k, w = stage.clientWidth / cam.k, h = stage.clientHeight / cam.k;
-  mv.style.cssText = `left:${x * M}px;top:${y * M}px;width:${w * M}px;height:${h * M}px`;
-}
-function miniGo(e) {
-  const r = mini.getBoundingClientRect(), wx = (e.clientX - r.left) / M, wy = (e.clientY - r.top) / M, a = area();
-  cam.x = a.x + a.w / 2 - wx * cam.k; cam.y = a.y + a.h / 2 - wy * cam.k; apply();
-}
-mini.addEventListener('pointerdown', e => { cancelAnimationFrame(anim); poke(); miniGo(e); try { mini.setPointerCapture(e.pointerId); } catch (_) {} });
-mini.addEventListener('pointermove', e => { if (e.buttons) miniGo(e); });
-mini.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); overview(); } });
 
 /* ---------- barra ---------- */
 $('#zIn').addEventListener('click', () => zoomBtn(1.25));
@@ -1176,14 +1180,13 @@ function layoutOverlays() {
 let idle = 0;
 function poke() { clearTimeout(idle); idle = setTimeout(resetAll, 240000); }
 ['pointerdown', 'wheel', 'keydown'].forEach(t => addEventListener(t, () => { state.touched = true; }, {passive:true, capture:true}));
-function resetAll() { state.tour = null; state.mini = false; drawer.hidden = true; toggleDecs(false); highlight(null); renderDock(); overview(); }
+function resetAll() { state.tour = null; state.open = false; toggleLegend(false); drawer.hidden = true; toggleDecs(false); highlight(null); renderDock(); overview(); }
 ['pointerdown', 'wheel'].forEach(t => addEventListener(t, poke, {passive:true}));
 
 /* ---------- início ---------- */
 let ready = false;
 function relayout() { measure(); layoutEdges(); }
 function init() {
-  toggleLegend(stage.clientWidth >= 1100);
   relayout(); renderDock(); overview(0); poke(); ready = true;
 }
 // A página pode carregar sem tamanho (aba em segundo plano, moldura ainda não dimensionada):
@@ -1194,7 +1197,7 @@ new ResizeObserver(() => {
   if (!ready || !w || !h || size === lastSize) return;
   lastSize = size; layoutOverlays();
   if (state.tour) goStep(0);
-  else if (!state.touched) { toggleLegend(w >= 1100); overview(0); }
+  else if (!state.touched) overview(0);
   else apply();
 }).observe(stage);
 init();
