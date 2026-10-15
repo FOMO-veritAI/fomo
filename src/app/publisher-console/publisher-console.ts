@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, EventEmitter, inject, OnDestroy, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { fopApi, FopArticle, FopClaim, FopEvidence, FopStatus, VeritaiAfirmacaoCandidata, VeritaiRelatorioAfirmacao } from '../fop-api';
+import { ApiDesligadaError, fopApi, FopArticle, FopClaim, FopEvidence, FopStatus, VeritaiAfirmacaoCandidata, VeritaiRelatorioAfirmacao } from '../fop-api';
 
 // Mesmos limites do backend e do contrato da VeritAI.
 const CLAIM_MIN = 10;
@@ -167,7 +167,10 @@ export class PublisherConsoleComponent implements OnDestroy {
   }
 
   async select(article: FopArticle): Promise<void> {
-    await this.run(async () => { this.current = await fopApi.publisherArticle(this.publisherKey, article.id); });
+    await this.run(async () => {
+      this.current = await fopApi.publisherArticle(this.publisherKey, article.id);
+      if (this.current.status === 'VERIFYING') this.startPolling();
+    });
   }
 
   async addUrl(): Promise<void> {
@@ -187,7 +190,7 @@ export class PublisherConsoleComponent implements OnDestroy {
     await this.run(async () => {
       await fopApi.verify(this.publisherKey, this.current!.id);
       this.current = await fopApi.publisherArticle(this.publisherKey, this.current!.id);
-      this.message = 'A análise automática começou. A primeira execução baixa os modelos e pode demorar alguns minutos.';
+      this.message = 'A análise automática começou.';
       this.startPolling();
     });
   }
@@ -204,7 +207,11 @@ export class PublisherConsoleComponent implements OnDestroy {
           this.message = this.current.status === 'ERROR' ? '' : 'Análise concluída. A notícia aguarda a decisão de um revisor humano.';
           if (this.current.status === 'ERROR') this.error = this.current.search_errors.join(' ') || 'A análise falhou. Tente novamente.';
         }
-      } catch { if (this.pollTimer) clearInterval(this.pollTimer); }
+      } catch (error) {
+        if (this.pollTimer) clearInterval(this.pollTimer);
+        this.pollTimer = undefined;
+        if (error instanceof ApiDesligadaError) { this.message = ''; this.error = error.message; }
+      }
       this.changes.markForCheck();
     }, 3000);
   }

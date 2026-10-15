@@ -36,9 +36,11 @@
           <h1>{{ greeting[0] }}<br><span>{{ greeting[1] }}</span></h1>
           <p>{{ greeting[2] }}</p>
           @if (view !== 'publisher') { <div class="mobile-demo">Protótipo visual · conteúdo fictício</div> }
+          <a class="veritai-embeddings-link mobile-only" [href]="veritaiEmbeddingsUrl" target="_blank" rel="noopener noreferrer">Explore os embeddings da VeritAI<span class="sr-only"> (abre em nova aba)</span> <app-icon name="arrow" /></a>
         </section>
 
         @if (view === 'news') {
+          @if (apiOffline) { <p class="api-offline-note" role="status"><app-icon name="info" /> {{ apiOffline }} As notícias publicadas aparecem aqui quando ela estiver ligada.</p> }
           @if (publicArticles.length) {
             <h2 class="view-section-label live-heading">Notícias publicadas <span>Verificadas por afirmação e aprovadas por um revisor humano</span></h2>
             @for (article of publicArticles; track article.id) {
@@ -195,7 +197,7 @@
         <section class="publishers-section"><h2 class="section-kicker">Outros olhares <app-icon name="globe" /></h2><p class="demo-caption">Veículos fictícios do protótipo</p>
           @for (article of [articles[2], articles[1]]; track article.id) { <div class="suggestion"><span class="publisher-logo" [class]="'publisher-logo ' + (article.logo || '')">{{ article.mark }}</span><div class="suggestion-info"><strong>{{ article.publisher }} <app-icon name="verified" className="verified-icon" /></strong><small>{{ article.id === 3 ? 'Tecnologia e cotidiano' : 'Ciência para entender o mundo' }}</small></div><button class="follow-button" [class.following]="following.has(article.publisher)" (click)="toggleFollow(article.publisher)">{{ following.has(article.publisher) ? 'Seguindo' : 'Seguir' }}</button></div> }
         </section>
-        <section class="fop-intro veritai-intro"><img class="veritai-logo-img" src="brand/web/veritai-logo.png" alt="VeritAI (in FOMO)" width="480" height="480" /><h3>Boas conversas começam com fatos.</h3><p>A VeritAI é a IA de verificação do FOMO: analisa cada afirmação e mostra as evidências. Notícias analisadas por ela trazem esta assinatura; a decisão de publicar é sempre de um revisor humano.</p><button (click)="open('how')">Conheça a VeritAI <app-icon name="arrow" /></button></section>
+        <section class="fop-intro veritai-intro"><img class="veritai-logo-img" src="brand/web/veritai-logo.png" alt="VeritAI (in FOMO)" width="480" height="480" /><h3>Boas conversas começam com fatos.</h3><p>A VeritAI é a IA de verificação do FOMO: analisa cada afirmação e mostra as evidências. Notícias analisadas por ela trazem esta assinatura; a decisão de publicar é sempre de um revisor humano.</p><button (click)="open('how')">Conheça a VeritAI <app-icon name="arrow" /></button><a class="veritai-embeddings-link" [href]="veritaiEmbeddingsUrl" target="_blank" rel="noopener noreferrer">Explore os embeddings da VeritAI<span class="sr-only"> (abre em nova aba)</span> <app-icon name="arrow" /></a></section>
         <footer class="right-footer"><div class="demo-label"><app-icon name="info" /> Protótipo visual · conteúdo fictício</div><span>FOMO © 2026 · Fear of Missing Objectivity.</span></footer>
       </aside>
     </div>

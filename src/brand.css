@@ -23,6 +23,36 @@ img { object-fit: cover; }
 .little-spark { color: var(--accent); }
 .sidebar-foot { color: #000; font-size: 12px; font-weight: 600; gap: 8px; }
 
+/* A barra lateral é fixa: em telas baixas ela rola e fica mais compacta, para que o fim (Publicar notícia, manifesto, VeritAI) não suma. */
+.sidebar { overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+@media (min-width: 781px) and (max-height: 1150px) {
+  .sidebar { padding-top: 22px; padding-bottom: 16px; }
+  .brand { width: 140px; }
+  .brand-tagline { font-size: 17px; margin: 2px 0 22px 15px; }
+  .navigation { gap: 3px; }
+  .nav-item { padding: 9px 16px; }
+  .nav-divider { margin: 12px 15px; }
+  .nav-label { margin-bottom: 6px; }
+  .sidebar-bottom { padding-top: 16px; }
+  .sidebar-manifest { padding: 12px 0; margin-bottom: 12px; }
+  .sidebar-manifest .little-spark { width: 22px; height: 22px; margin-bottom: 6px; }
+  .sidebar-manifest p { font-size: 22px; }
+}
+@media (min-width: 781px) and (max-height: 800px) {
+  .sidebar { padding-top: 16px; padding-bottom: 12px; }
+  .brand { width: 112px; }
+  .brand-tagline { font-size: 15px; margin-bottom: 14px; }
+  .nav-item { padding: 7px 16px; }
+  .nav-divider { margin: 8px 15px; }
+  .sidebar-bottom { padding-top: 10px; }
+  .sidebar-manifest { padding: 8px 0; margin-bottom: 8px; }
+  .sidebar-manifest .little-spark { display: none; }
+  .sidebar-manifest p { font-size: 20px; }
+}
+@media (max-width: 1250px) {
+  .nav-item.active:before { left: -17px; }
+}
+
 /* Navegação */
 .nav-item { color: #000; font-weight: 600; border-radius: 0; border: 2px solid transparent; }
 .nav-item:hover { border-color: #000; background: #fff; }
@@ -121,6 +151,15 @@ img { object-fit: cover; }
 .veritai-intro h3 { font-family: var(--font); font-weight: 800; font-size: 20px; line-height: 1.2; color: #000; }
 .veritai-intro p { color: #333; }
 .veritai-intro button { color: #000; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.veritai-embeddings-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: #000; font-size: 14px; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.veritai-embeddings-link svg { width: 13px; height: 13px; }
+.veritai-embeddings-link.mobile-only { display: none; }
+@media (max-width: 1080px) { .veritai-embeddings-link.mobile-only { display: inline-flex; } }
+.api-offline-note { display: flex; align-items: flex-start; gap: 8px; margin: 22px 0 0; padding: 12px 14px; background: #fff; border: 2px solid #000; color: #000; font-size: 14px; }
+.api-offline-note svg { width: 17px; height: 17px; margin-top: 2px; }
+/* Fica aqui porque o CSS do console já passa do orçamento por componente. */
+.verifying-note { display: flex; align-items: flex-start; gap: 8px; margin: 14px 0; padding: 10px 12px; border: 2px dashed #000; background: #fff; color: #000; font-size: 14px; }
+.verifying-note svg { width: 17px; height: 17px; margin-top: 2px; }
 .right-footer, .right-footer .demo-label { color: #555; }
 
 /* Painéis laterais */
