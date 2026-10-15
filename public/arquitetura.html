@@ -1186,10 +1186,17 @@ function init() {
   toggleLegend(stage.clientWidth >= 1100);
   relayout(); renderDock(); overview(0); poke(); ready = true;
 }
-addEventListener('resize', () => {
-  if (!ready) return; layoutOverlays();
-  if (state.tour) goStep(0); else apply();
-});
+// A página pode carregar sem tamanho (aba em segundo plano, moldura ainda não dimensionada):
+// enquanto ninguém mexeu, cada mudança de tamanho reenquadra a visão geral.
+let lastSize = '';
+new ResizeObserver(() => {
+  const w = stage.clientWidth, h = stage.clientHeight, size = w + 'x' + h;
+  if (!ready || !w || !h || size === lastSize) return;
+  lastSize = size; layoutOverlays();
+  if (state.tour) goStep(0);
+  else if (!state.touched) { toggleLegend(w >= 1100); overview(0); }
+  else apply();
+}).observe(stage);
 init();
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { relayout(); if (!state.touched) overview(0); });
 })();
