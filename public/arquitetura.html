@@ -1,0 +1,1198 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Arquitetura FOMO + VeritAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@1,6..72,500;1,6..72,600&display=swap">
+<style>
+/* Layout: canvas navegável (arrastar e aproximar). Zonas por repositório, da esquerda (pessoas) para a direita (serviços externos);
+   infraestrutura e dados embaixo. Identidade FOMO: preto, off-white e vermelho só em destaque; VeritAI: moldura fina e serifa itálica. */
+:root{
+  --bg:#f0f0f0; --paper:#ffffff; --ink:#000000; --muted:#555555; --line:#cfcfcf;
+  --accent:#ff3333; --on-accent:#000000; --zone:rgba(255,255,255,.55); --dots:rgba(0,0,0,.10);
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  --display:'Bangers','Impact','Arial Black',sans-serif;
+  --verit:'Newsreader',Georgia,'Times New Roman',serif;
+  --mono:ui-monospace,'Cascadia Mono',Consolas,'SF Mono',Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f0f0f; --paper:#1b1b1b; --ink:#f2f2f2; --muted:#a8a8a8; --line:#3b3b3b;
+  --accent:#ff4d4d; --on-accent:#000000; --zone:rgba(27,27,27,.6); --dots:rgba(255,255,255,.08); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f0f0f; --paper:#1b1b1b; --ink:#f2f2f2; --muted:#a8a8a8; --line:#3b3b3b;
+  --accent:#ff4d4d; --on-accent:#000000; --zone:rgba(27,27,27,.6); --dots:rgba(255,255,255,.08); color-scheme:dark}
+
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--font);overflow:hidden}
+[hidden]{display:none!important}
+button,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.app{height:100%;display:flex;flex-direction:column}
+
+/* Barra superior */
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 16px;background:var(--paper);border-bottom:3px solid var(--ink);position:relative;z-index:20}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.burst{position:relative;isolation:isolate;padding:5px 15px 3px;font:400 26px/1 var(--display);letter-spacing:.04em;color:var(--bg)}
+.burst::before{content:"";position:absolute;inset:-7px -9px;z-index:-1;background:var(--ink);
+  clip-path:polygon(50% 0,60% 16%,80% 4%,78% 26%,100% 30%,86% 48%,100% 68%,78% 72%,82% 96%,60% 84%,48% 100%,38% 82%,16% 96%,20% 72%,0 64%,14% 48%,2% 26%,24% 26%,22% 4%,40% 16%)}
+.burst i{font-style:normal;color:var(--accent)}
+.plus{font:800 18px var(--font)}
+.vmark{display:inline-flex;align-items:baseline;padding:3px 8px 2px;border:1.5px solid var(--ink)}
+.vmark em{font:600 italic 23px/1 var(--verit)}
+.vmark b{font:900 19px/1 var(--font)}
+.titles{display:flex;flex-direction:column;min-width:0}
+.titles h1{margin:0;font:800 16px/1.15 var(--font);letter-spacing:-.01em}
+.titles small{font:500 12px/1.3 var(--font);color:var(--muted)}
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:2px solid var(--ink);border-radius:999px;background:var(--paper);font:700 13px var(--font);white-space:nowrap}
+.btn:hover{background:var(--bg)}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.btn.icon{width:34px;padding:0;justify-content:center;font-size:18px}
+.zoom{display:inline-flex;align-items:center;border:2px solid var(--ink);border-radius:999px;overflow:hidden;height:34px}
+.zoom button{border:0;background:var(--paper);width:34px;height:100%;font:700 18px var(--font)}
+.zoom button:hover{background:var(--bg)}
+.zoom output{min-width:48px;text-align:center;font:700 12px var(--mono);border-inline:2px solid var(--ink);line-height:30px;font-variant-numeric:tabular-nums}
+.goto{height:34px;border:2px solid var(--ink);border-radius:999px;background:var(--paper);padding:0 10px;font:700 13px var(--font)}
+
+/* Palco */
+.stage{position:relative;flex:1;min-height:0;overflow:hidden}
+#vp{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;
+  background-color:var(--bg);background-image:radial-gradient(var(--dots) 1.3px,transparent 1.6px);background-size:26px 26px}
+#vp.grabbing{cursor:grabbing}
+#world{position:absolute;left:0;top:0;width:3560px;height:1960px;transform-origin:0 0}
+#edges{position:absolute;left:0;top:0;width:3560px;height:1960px;overflow:visible;pointer-events:none;z-index:1}
+
+/* Zonas */
+.zone{position:absolute;border:2px solid var(--ink);border-radius:14px;background:var(--zone)}
+.zone.dashed{border-style:dashed}
+.zone.verit{border-width:1.5px;border-radius:0}
+.zlabel{position:absolute;z-index:4;display:flex;align-items:baseline;gap:10px;padding:6px 14px 4px;background:var(--ink);color:var(--bg);
+  transform:rotate(-1.2deg);transform-origin:0 100%;box-shadow:5px 5px 0 var(--accent);white-space:nowrap;transition:transform .25s}
+.zlabel b{font:400 32px/1 var(--display);letter-spacing:.04em}
+.zlabel small{font:600 12.5px/1 var(--font)}
+.zlabel.verit b{font:600 italic 32px/1 var(--verit);letter-spacing:0}
+.zlabel.verit b span{font:900 normal 28px/1 var(--font)}
+.zrepo{position:absolute;right:16px;top:12px;font:600 11.5px var(--mono);color:var(--muted)}
+
+/* Cards */
+.card{position:absolute;z-index:2;display:flex;flex-direction:column;gap:6px;padding:12px 14px 13px;text-align:left;
+  background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:6px;
+  transition:opacity .25s,transform .15s,box-shadow .15s}
+.card:hover{transform:translate(-2px,-2px)}
+.card.sel{outline:4px solid var(--accent);outline-offset:4px}
+.card.dim{opacity:.2}
+.card > span{display:block}
+.eb{display:flex!important;align-items:center;gap:6px;font:700 10.5px/1.2 var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.eb svg{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ttl{font:800 17px/1.15 var(--font);letter-spacing:-.01em;text-wrap:balance}
+.tx{font:400 12.5px/1.42 var(--font)}
+.chips{display:flex!important;flex-wrap:wrap;gap:4px;margin-top:2px}
+.chip{font:600 10.5px/1 var(--mono);padding:4px 7px;border:1.5px solid var(--ink);border-radius:999px;background:var(--bg)}
+.farl{display:none!important}
+
+.card.k-pessoa{border-radius:26px;padding-inline:18px}
+.card.k-tela{padding-top:26px}
+.card.k-tela::before{content:"";position:absolute;left:0;right:0;top:0;height:13px;border-bottom:2px solid var(--ink);
+  background:radial-gradient(circle at 9px 6.5px,var(--ink) 2.4px,transparent 2.9px),radial-gradient(circle at 18px 6.5px,var(--ink) 2.4px,transparent 2.9px),radial-gradient(circle at 27px 6.5px,var(--ink) 2.4px,transparent 2.9px)}
+.card.k-rota,.card.k-seg,.card.k-regra{border-radius:3px;box-shadow:6px 6px 0 var(--ink)}
+.card.k-rota:hover,.card.k-seg:hover,.card.k-regra:hover{box-shadow:8px 8px 0 var(--ink)}
+.card.k-ia,.card.k-etapa{border-width:1.5px;border-radius:0}
+.card.k-ia .ttl,.card.k-etapa .ttl{font:600 italic 21px/1.08 var(--verit);letter-spacing:0}
+.card.k-etapa{flex-direction:row;gap:12px;align-items:flex-start}
+.card.k-etapa .num{font:600 italic 40px/.85 var(--verit);min-width:24px}
+.card.k-etapa .body{display:flex;flex-direction:column;gap:4px}
+.card.k-banco{border-top-left-radius:0;border-top-right-radius:0}
+.card.k-banco::before{content:"";position:absolute;left:-3px;right:-3px;top:-19px;height:22px;border:3px solid var(--ink);border-bottom:0;border-radius:50%/100% 100% 0 0;background:var(--paper)}
+.card.k-dados{border-width:2px;border-radius:0 6px 6px 6px}
+.card.k-dados::before{content:"";position:absolute;left:-2px;top:-15px;width:74px;height:13px;border:2px solid var(--ink);border-bottom:0;border-radius:6px 6px 0 0;background:var(--paper)}
+.card.k-infra{border-width:2px;border-radius:4px;background-image:radial-gradient(var(--dots) 1.2px,transparent 1.5px);background-size:7px 7px}
+.card.k-externo{border:2px dashed var(--ink);background:var(--bg)}
+
+.tbl{display:grid!important;grid-template-columns:auto 1fr;gap:4px 10px;margin-top:2px;font:500 11.5px/1.3 var(--font)}
+.tbl b{font-weight:800}
+.tbl code{font:600 11px var(--mono)}
+.tbl i{display:block;font-style:normal;color:var(--muted)}
+.flow{display:flex!important;flex-direction:column;align-items:flex-start;gap:3px;margin-top:2px}
+.fr{display:flex;flex-wrap:wrap;gap:4px}
+.st{font:700 11px/1 var(--font);padding:4px 7px;border:1.5px solid var(--ink);border-radius:3px;background:var(--bg)}
+.st.pub{background:var(--ink);color:var(--bg)}
+.fa{font:700 12px/1 var(--font);color:var(--muted);padding-left:6px}
+
+/* Zoom semântico: de longe, só o nome */
+.far .card > :not(.farl){visibility:hidden}
+.far .card .farl{display:flex!important;position:absolute;inset:0;align-items:center;justify-content:center;padding:8px 14px;text-align:center;
+  font:800 26px/1.06 var(--font);letter-spacing:-.015em;text-wrap:balance}
+.far .k-ia .farl,.far .k-etapa .farl{font:600 italic 30px/1.02 var(--verit);letter-spacing:0}
+.far .elabel{opacity:0}
+.far .zlabel{transform:rotate(-1.2deg) scale(1.55)}
+
+/* Setas */
+.edge{fill:none;stroke:var(--ink);stroke-width:2;transition:opacity .25s}
+.e-acao{stroke-width:3.6}
+.e-dados{stroke-dasharray:7 5}
+.e-build{stroke-dasharray:.5 6;stroke-linecap:round;stroke-width:2.8}
+.e-opcional{stroke:var(--muted);stroke-dasharray:7 5}
+.e-interno{stroke:var(--muted);stroke-width:1.6}
+.edge.hot{stroke:var(--accent);stroke-width:3.4;stroke-dasharray:9 7;stroke-linecap:butt;animation:flow .9s linear infinite}
+.edge.dim{opacity:.12}
+@keyframes flow{to{stroke-dashoffset:-32}}
+.ah-ink path{fill:var(--ink)} .ah-muted path{fill:var(--muted)} .ah-hot path{fill:var(--accent)}
+.elabel{position:absolute;z-index:3;transform:translate(-50%,-50%);width:max-content;max-width:var(--lw,150px);padding:3px 7px;
+  background:var(--bg);border:1.5px solid var(--ink);border-radius:4px;font:600 11px/1.28 var(--font);text-align:center;pointer-events:none;transition:opacity .25s}
+.elabel.soft{border-style:dashed;color:var(--muted);border-color:var(--muted)}
+.elabel.hot{background:var(--accent);color:var(--on-accent);border:1.5px solid var(--ink)}
+.elabel.dim{opacity:.12}
+
+/* Painéis */
+.panel{position:absolute;top:0;bottom:0;z-index:15;width:min(430px,100%);background:var(--paper);overflow:auto;overscroll-behavior:contain}
+#drawer{right:0;border-left:3px solid var(--ink)}
+#decs{left:0;width:min(390px,100%);border-right:3px solid var(--ink)}
+.ph{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 18px;background:var(--paper);border-bottom:2px solid var(--ink);z-index:1}
+.ph b{font:400 22px/1 var(--display);letter-spacing:.04em}
+.pb{padding:16px 22px 28px}
+.d-eb{margin:0 0 6px;font:700 11px/1.3 var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.pb h2{margin:0 0 10px;font:800 24px/1.12 var(--font);letter-spacing:-.015em;text-wrap:balance}
+.pb h2.v{font:600 italic 30px/1.05 var(--verit);letter-spacing:0}
+.lead{margin:0 0 6px;font:500 15px/1.5 var(--font)}
+.sec{margin-top:18px}
+.sec h3{margin:0 0 6px;font:800 11px/1.2 var(--font);letter-spacing:.1em;text-transform:uppercase}
+.sec p{margin:0;font:400 14px/1.55 var(--font);max-width:62ch}
+.sec ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font:400 14px/1.5 var(--font)}
+.sec ul.num li{font-variant-numeric:tabular-nums}
+.sec code,.codes code{font:600 12px var(--mono);background:var(--bg);border:1px solid var(--line);padding:1px 5px;border-radius:3px;overflow-wrap:anywhere}
+.codes{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+.io{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.io > div{min-width:0;border:2px solid var(--ink);padding:10px 12px;border-radius:4px}
+.io ul{padding-left:16px;font-size:13px}
+.links{display:flex;flex-direction:column;gap:6px}
+.lk{display:flex;gap:8px;align-items:flex-start;width:100%;text-align:left;padding:8px 10px;border:1.5px solid var(--ink);border-radius:4px;background:var(--bg)}
+.lk:hover{background:var(--paper)}
+.lk .dir{font:800 14px/1.2 var(--font);width:16px;flex:none}
+.lk span{display:block;min-width:0}
+.lk b{display:block;font:700 13px/1.3 var(--font)}
+.lk small{display:block;font:500 12px/1.35 var(--font);color:var(--muted)}
+.tag{display:inline-block;font:700 10.5px/1 var(--font);letter-spacing:.06em;text-transform:uppercase;padding:4px 7px;border:1.5px solid var(--ink);border-radius:999px}
+.dgroup{margin-top:16px}
+.dgroup h3{margin:0 0 8px;font:400 20px/1 var(--display);letter-spacing:.05em}
+.ditem{display:block;width:100%;text-align:left;padding:10px 12px;margin-bottom:8px;border:2px solid var(--ink);border-radius:4px;background:var(--paper);box-shadow:3px 3px 0 var(--ink)}
+.ditem:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink)}
+.ditem b{display:block;font:800 14px/1.25 var(--font)}
+.ditem span{display:block;margin-top:3px;font:400 13px/1.45 var(--font);color:var(--muted)}
+
+/* Fluxos guiados */
+#dock{position:absolute;z-index:12;bottom:16px;left:var(--dx,50%);transform:translateX(-50%);width:min(780px,calc(var(--aw,100vw) - 32px));
+  background:var(--paper);border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:12px 16px 14px;border-radius:4px}
+#dock.mini{width:auto;padding:0;border:0;box-shadow:none;background:transparent}
+.dh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px}
+.dh b{font:400 22px/1 var(--display);letter-spacing:.04em}
+.dh .eb{font-size:11px}
+.dh .cnt{font:700 12px var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tours{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px}
+.tours button{display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:left;padding:9px 11px;border:2px solid var(--ink);border-radius:4px;background:var(--bg)}
+.tours button:hover{background:var(--accent);color:var(--on-accent)}
+.tours button span{font:800 13px/1.2 var(--font)}
+.tours button small{font:600 11px var(--mono);opacity:.8}
+.cap{margin:0 0 10px;font:500 16px/1.45 var(--font);max-width:70ch;min-height:2.9em}
+.ctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.dots{display:flex;gap:5px;margin-inline:4px auto}
+.dots i{width:9px;height:9px;border:2px solid var(--ink);border-radius:50%}
+.dots i.on{background:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.link{border-color:transparent;background:transparent;text-decoration:underline;text-underline-offset:3px}
+
+/* Legenda, minimapa e dica */
+#legend{position:absolute;z-index:11;right:16px;bottom:16px;width:262px;background:var(--paper);border:2px solid var(--ink);border-radius:4px;padding:10px 12px 12px;font:500 12px/1.3 var(--font)}
+#legend h3{margin:0 0 6px;font:800 11px/1.2 var(--font);letter-spacing:.1em;text-transform:uppercase}
+.lg{display:grid;grid-template-columns:44px 1fr;align-items:center;gap:5px 8px;margin-bottom:10px}
+.lg svg{width:44px;height:12px;overflow:visible}
+.sw{width:34px;height:16px;position:relative;background:var(--paper);border:2px solid var(--ink);box-sizing:border-box}
+.sw.k-pessoa{border-radius:9px}
+.sw.k-tela{border-top-width:5px}
+.sw.k-rota{border-radius:2px;box-shadow:3px 3px 0 var(--ink)}
+.sw.k-ia{border-width:1px;border-radius:0}
+.sw.k-banco{border-radius:4px 4px 2px 2px;border-top-width:4px}
+.sw.k-dados{border-radius:0 3px 3px 3px}
+.sw.k-infra{background-image:radial-gradient(var(--ink) .8px,transparent 1px);background-size:4px 4px}
+.sw.k-externo{border-style:dashed;background:var(--bg)}
+.lgnote{margin:0;color:var(--muted);font-size:11.5px}
+#mini{position:absolute;z-index:11;left:16px;bottom:16px;width:220px;height:122px;background:var(--paper);border:2px solid var(--ink);border-radius:4px;overflow:hidden;cursor:pointer;touch-action:none}
+#mini .mz{position:absolute;border:1px solid var(--muted);background:var(--bg)}
+#mini .mv{position:absolute;border:2px solid var(--accent);background:rgba(255,51,51,.12)}
+.hint{position:absolute;z-index:10;left:16px;top:14px;padding:6px 10px;background:var(--paper);border:1.5px solid var(--ink);border-radius:999px;font:600 12px/1.2 var(--font);pointer-events:none}
+
+@media (max-width:760px){
+  .titles small,.hint,#mini{display:none}
+  .burst{font-size:21px}.vmark em{font-size:19px}.vmark b{font-size:16px}
+  .tools{margin-left:0}
+  .panel{top:auto;height:62%;width:100%;border-left:0;border-right:0;border-top:3px solid var(--ink)}
+  #decs{width:100%;border-right:0}
+  #legend{right:8px;bottom:8px;width:230px}
+  #dock{bottom:10px}
+  .cap{font-size:14.5px}
+}
+@media (prefers-reduced-motion:reduce){.edge.hot{animation:none}.card,.zlabel{transition:none}.card:hover{transform:none}}
+</style>
+
+<div class="app">
+  <header class="bar">
+    <div class="brand" aria-label="FOMO mais VeritAI">
+      <span class="burst" aria-hidden="true">FOMO<i>!</i></span>
+      <span class="plus" aria-hidden="true">+</span>
+      <span class="vmark" aria-hidden="true"><em>Verit</em><b>AI</b></span>
+      <div class="titles"><h1>Mapa da arquitetura</h1><small>Grupo 5 · Residência em IA · Fake news e desinformação</small></div>
+    </div>
+    <div class="tools">
+      <button class="btn" id="bDecs" type="button" aria-pressed="false">Decisões <span id="nDecs"></span></button>
+      <select class="goto" id="goto" aria-label="Ir para uma parte do mapa">
+        <option value="">Ir para…</option>
+      </select>
+      <div class="zoom" role="group" aria-label="Zoom">
+        <button type="button" id="zOut" aria-label="Afastar">−</button>
+        <output id="zVal">100%</output>
+        <button type="button" id="zIn" aria-label="Aproximar">+</button>
+      </div>
+      <button class="btn" id="bFit" type="button">Ver tudo</button>
+      <button class="btn" id="bLeg" type="button" aria-pressed="true">Legenda</button>
+      <button class="btn" id="bFull" type="button" hidden>Tela cheia</button>
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <div id="vp" aria-label="Mapa da arquitetura. Arraste para mover e role para aproximar.">
+      <div id="world">
+        <svg id="edges" aria-hidden="true">
+          <defs>
+            <marker id="ah-ink" class="ah-ink" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0,0 L10,5 L0,10 z"/></marker>
+            <marker id="ah-muted" class="ah-muted" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M0,0 L10,5 L0,10 z"/></marker>
+            <marker id="ah-hot" class="ah-hot" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><path d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+        </svg>
+      </div>
+    </div>
+    <div class="hint" id="hint">Arraste para mover · role para aproximar · clique num card</div>
+
+    <div id="legend">
+      <h3>Cards</h3>
+      <div class="lg">
+        <span class="sw k-pessoa"></span><span>Pessoa</span>
+        <span class="sw k-tela"></span><span>Tela ou código do frontend</span>
+        <span class="sw k-rota"></span><span>Rota e regra da API</span>
+        <span class="sw k-ia"></span><span>Componente da VeritAI</span>
+        <span class="sw k-banco"></span><span>Banco de dados</span>
+        <span class="sw k-dados"></span><span>Arquivo, dado ou documento</span>
+        <span class="sw k-infra"></span><span>Infraestrutura</span>
+        <span class="sw k-externo"></span><span>Serviço externo</span>
+      </div>
+      <h3>Setas</h3>
+      <div class="lg" id="lgEdges"></div>
+      <p class="lgnote">A seta vai de quem envia para quem recebe. O rótulo diz o que passa.</p>
+    </div>
+
+    <div id="mini" aria-label="Minimapa: clique para ir a uma parte do mapa" role="button" tabindex="0"></div>
+
+    <aside class="panel" id="decs" hidden aria-label="Decisões de arquitetura">
+      <div class="ph"><b>Decisões de arquitetura</b><button class="btn icon" type="button" data-close="decs" aria-label="Fechar decisões">×</button></div>
+      <div class="pb" id="decsBody"></div>
+    </aside>
+
+    <aside class="panel" id="drawer" hidden aria-label="Detalhes">
+      <div class="ph"><b id="drawerKind">Detalhes</b><button class="btn icon" type="button" data-close="drawer" aria-label="Fechar detalhes">×</button></div>
+      <div class="pb" id="drawerBody"></div>
+    </aside>
+
+    <section id="dock" aria-live="polite"></section>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const W = 3560, H = 1960;
+
+const ZONES = {
+  pessoas: {x:40,  y:110,  w:330,  h:1045, t:'Pessoas', s:'quem usa'},
+  front:   {x:440, y:110,  w:650,  h:1045, t:'Frontend', s:'Angular 22, no navegador', repo:'repositório fomo'},
+  api:     {x:1250,y:110,  w:660,  h:1045, t:'API do FOMO', s:'FastAPI, Python', repo:'repositório fomo'},
+  veritai: {x:2050,y:110,  w:1060, h:1130, t:'VeritAI', s:'serviço de IA, só CPU', repo:'repositório veritai', verit:true},
+  ext:     {x:3180,y:110,  w:345,  h:1130, t:'Fora do sistema', s:'serviços externos', dashed:true},
+  infra:   {x:40,  y:1215, w:1870, h:560,  t:'Infraestrutura', s:'Docker, AWS e GitHub', repo:'fomo/deploy · infra/ · veritai/deploy'},
+  dados:   {x:2050,y:1290, w:1475, h:600,  t:'Dados e avaliação', s:'como a base e os números foram feitos', repo:'repositório veritai-dados'},
+};
+
+const I = {
+  pessoa:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
+  tela:'<rect x="3" y="4" width="18" height="14" rx="1"/><path d="M3 8h18M8 21h8"/>',
+  rota:'<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  seg:'<rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  regra:'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="12" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8.5 6h4l3 4M8.5 18h4l3-4"/>',
+  ia:'<circle cx="11" cy="11" r="6"/><path d="M16 16l5 5"/>',
+  etapa:'',
+  banco:'<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
+  dados:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',
+  infra:'<rect x="3" y="4" width="18" height="7" rx="1"/><rect x="3" y="13" width="18" height="7" rx="1"/><path d="M7 7.5h.01M7 16.5h.01"/>',
+  externo:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+};
+
+const CARDS = [
+// Pessoas
+{id:'p-leitor',k:'pessoa',z:'pessoas',x:70,y:175,w:260,eb:'Pessoa',t:'Leitor',
+ tx:'Lê as notícias aprovadas e vê o resultado de cada afirmação, com as fontes.',ch:['sem login','só leitura'],
+ faz:'Navega pelo feed. Em cada notícia verificada, vê o resultado de cada afirmação, com ícone e texto, e as fontes usadas. Não vê o relatório interno, os anexos nem as notas do revisor.',
+ entra:['Notícias com status Publicada'],sai:['Nada: o feed é só leitura'],
+ pq:['Autonomia do leitor: o resultado vem junto das evidências, para ele julgar.','Não existe selo de verdadeiro ou falso para a notícia inteira.'],
+ cod:['fomo/src/app/app.html','fomo/backend/app/main.py · public_record']},
+{id:'p-publisher',k:'pessoa',z:'pessoas',x:70,y:455,w:260,eb:'Pessoa',t:'Publisher (veículo)',far:'Publisher',
+ tx:'Escreve a notícia, escolhe as afirmações factuais e anexa evidências.',ch:['chave do publisher','até 8 afirmações'],
+ faz:'Cria o rascunho com título, resumo, texto, tema e de 1 a 8 afirmações, de 10 a 500 caracteres cada. Pode pedir sugestões à VeritAI, anexar links e arquivos e enviar para análise.',
+ entra:['Afirmações sugeridas, com alertas','Status da notícia e motivo de erro'],sai:['Notícia e afirmações','Links e arquivos TXT, PDF, PNG ou JPG de até 5 MB'],
+ pq:['Quem escreve indica o que é fato verificável. A IA só sugere.','A data da verificação e a busca na web são decididas pelo servidor, não pelo publisher.']},
+{id:'p-revisor',k:'pessoa',z:'pessoas',x:70,y:735,w:260,eb:'Pessoa',t:'Revisor humano',far:'Revisor',
+ tx:'Lê o relatório da VeritAI e decide. Só a aprovação dele publica.',ch:['chave do revisor','nota obrigatória'],
+ faz:'Vê a fila de notícias analisadas, o relatório completo de cada afirmação, as checagens candidatas e os anexos. Aprova e publica, devolve ao publisher ou pede comprovação, sempre com uma nota de pelo menos 8 caracteres.',
+ entra:['Relatório completo por afirmação','Anexos enviados pelo publisher'],sai:['Decisão: aprovar, devolver ou pedir comprovação','Nota da revisão'],
+ pq:['Humano nas decisões de dano: a VeritAI recomenda e documenta, a pessoa decide.','A afirmação contradita aparece em destaque, sem bloqueio automático.']},
+
+// Frontend
+{id:'f-feed',k:'tela',z:'front',x:470,y:175,w:245,eb:'Tela',t:'Feed de notícias',far:'Feed',
+ tx:'Notícias publicadas, vindas da API, separadas dos Exemplos visuais, que são fictícios.',ch:['GET /articles'],
+ faz:'Mostra a seção Notícias publicadas, que vem da API, e a seção Exemplos visuais, fictícia, que demonstra o protótipo. Se a API não responde, a tela avisa que ela está desligada e continua mostrando os exemplos.',
+ entra:['Notícias publicadas (JSON)'],sai:['Pedido GET /articles'],
+ pq:['Separar o real da demonstração evita confundir o leitor.'],cod:['fomo/src/app/app.html','fomo/src/app/news-card/']},
+{id:'f-marca',k:'tela',z:'front',x:820,y:175,w:245,eb:'Componente',t:'Resultado por afirmação',
+ tx:'✓ apoiam · ≠ contradizem · ? insuficientes · ⇄ conclusões diferentes. Sem calibração: “Não avaliável”.',ch:['ícone + texto'],
+ faz:'Cada afirmação mostra um dos quatro resultados, com ícone e texto: As evidências apoiam, As evidências contradizem, Evidências insuficientes ou Conclusões diferentes. Embaixo vêm o texto público da VeritAI e as fontes. Documento anexado aparece como “Documento enviado pelo publisher”, sem o nome do arquivo.',
+ pq:['Incerteza honesta: insuficiente não é falso.','Ícone e texto, sem vermelho e verde: acessível e sem tom de veredito.','Nenhuma porcentagem enquanto não houver calibração com dados rotulados.'],
+ cod:['fomo/src/app/veritai-mark/veritai-icones.ts']},
+{id:'f-publisher',k:'tela',z:'front',x:470,y:455,w:245,eb:'Tela',t:'Console do publisher',
+ tx:'Formulário da notícia, Sugerir afirmações, anexos e Enviar para análise automática.',ch:['acompanha o status'],
+ faz:'O publisher digita a chave, preenche a notícia, pede sugestões se quiser, cria o rascunho, anexa evidências e envia para análise. Enquanto a análise roda, a tela consulta o status de tempos em tempos.',
+ entra:['Afirmações sugeridas','Status e erros da análise'],sai:['Rascunho (JSON)','Anexos (multipart)','Pedido de análise'],
+ pq:['A análise é assíncrona: a tela não trava enquanto a VeritAI trabalha.','Nada vem marcado na sugestão: o publisher escolhe e edita cada afirmação.'],
+ cod:['fomo/src/app/publisher-console/']},
+{id:'f-cliente',k:'tela',z:'front',x:820,y:455,w:245,eb:'Código',t:'Cliente da API',
+ tx:'Único ponto de acesso HTTP do frontend. Põe a chave do papel no cabeçalho.',ch:['fop-api.ts'],
+ faz:'Concentra as chamadas à API do FOMO. O endereço vem do build (FOMO_API_URL); sem ele, usa http://127.0.0.1:8000. Se a rede falha, gera o erro “API desligada”, que as telas mostram como aviso.',
+ entra:['Respostas JSON da API'],sai:['Pedidos HTTP com X-Publisher-Key ou X-Reviewer-Key'],
+ pq:['Endereço, cabeçalhos e erros num lugar só.','A chave fica só na memória da página: não vai para o código nem para o armazenamento do navegador.'],
+ cod:['fomo/src/app/fop-api.ts']},
+{id:'f-revisao',k:'tela',z:'front',x:470,y:735,w:245,eb:'Tela',t:'Tela de revisão',far:'Revisão',
+ tx:'Fila de notícias analisadas, relatório completo e os três botões de decisão.',ch:['contradição em destaque'],
+ faz:'Mostra a fila (Aguardando revisão e Precisa de evidências) e, por afirmação, as evidências, as fontes independentes, a justificativa e as limitações. Checagens anteriores aparecem como “checagens candidatas, a conferir”. Os anexos abrem para conferência manual.',
+ entra:['Fila com relatório (JSON)','Arquivos anexados'],sai:['Decisão e nota'],
+ pq:['Checagem anterior nunca vira veredito: é pista para o revisor.','Com documento ou imagem anexado, o revisor pode aprovar após conferência manual mesmo quando a comparação textual foi insuficiente. A notícia pública indica essa condição.'],
+ cod:['fomo/src/app/publisher-console/publisher-console.html']},
+{id:'f-proto',k:'tela',z:'front',x:820,y:735,w:245,eb:'Protótipo',t:'Reactions, Comunidades, Populares, Salvos e Perfil',far:'Telas do protótipo',
+ tx:'Telas do protótipo visual, com dados de exemplo e sem API.',ch:['data.ts'],
+ faz:'Mostram como seria a plataforma completa: críticas em texto e vídeo, comunidades, populares, salvos e perfil. Todo o conteúdo é de exemplo.',
+ pq:['O MVP implementa de ponta a ponta só o fluxo de verificação.'],cod:['fomo/src/app/data.ts']},
+{id:'f-build',k:'dados',z:'front',x:470,y:955,w:245,eb:'Artefato',t:'Build estático (dist/)',far:'Build (dist/)',
+ tx:'npm run build gera HTML, JS e CSS. O mesmo build vai para o Caddy e para o GitHub Pages.',ch:['Angular 22'],
+ entra:['Código em fomo/src','FOMO_API_URL, opcional'],sai:['fomo/dist/: arquivos estáticos'],
+ pq:['Frontend estático: qualquer servidor de arquivos hospeda.'],cod:['fomo/angular.json']},
+
+// API do FOMO
+{id:'a-publico',k:'rota',z:'api',x:1280,y:175,w:245,eb:'Rotas públicas',t:'GET /articles',far:'Rotas públicas',
+ tx:'Só notícias publicadas. Por afirmação, só o texto público e as fontes.',ch:['sem chave'],
+ faz:'Devolve apenas notícias com status Publicada. Relatório interno, notas e anexos ficam de fora. Documento anexado aparece como “Documento enviado pelo publisher”.',
+ entra:['Pedido do feed'],sai:['Notícias publicadas (JSON)'],
+ pq:['A separação de papéis vale também para os dados: o leitor não recebe o que é interno.'],cod:['fomo/backend/app/main.py · public_record']},
+{id:'a-auth',k:'seg',z:'api',x:1635,y:175,w:245,eb:'Segurança',t:'Quem vê o quê',
+ tbl:[['Leitor','<code>/articles</code> <i>sem chave</i>'],['Publisher','<code>/publisher/*</code> <i>X-Publisher-Key</i>'],['Revisor','<code>/review/*</code> <i>X-Reviewer-Key</i>'],['VeritAI','<i>só rede interna</i>']],
+ faz:'A API compara a chave recebida com a do servidor em tempo constante (secrets.compare_digest) e responde 401 se ela faltar ou estiver errada. O CORS só aceita as origens configuradas e só os cabeçalhos das chaves.',
+ pq:['Uma chave por papel, gerada aleatoriamente por criar_env.py e guardada só no .env do servidor.','A VeritAI não tem autenticação, então não tem porta publicada.'],
+ fora:['Cadastro institucional e identidade verificada: planejados, fora do MVP.','Isolamento entre publishers: quem tem a chave do publisher vê todas as notícias do sistema.'],
+ cod:['fomo/backend/app/main.py · require_publisher, require_reviewer','fomo/deploy/criar_env.py']},
+{id:'a-publisher',k:'rota',z:'api',x:1280,y:415,w:245,eb:'Rotas do publisher',t:'/publisher/*',far:'Rotas do publisher',
+ tx:'Cria o rascunho, recebe anexos, pede sugestões e dispara a análise.',ch:['X-Publisher-Key'],
+ faz:'POST /publisher/articles cria o rascunho. evidence/url e evidence/file recebem evidências. claims/suggest repassa título e texto ao /extrair. verify apaga resultados antigos, marca Em análise automática e agenda a análise em segundo plano.',
+ entra:['Notícia e afirmações (JSON)','Links e arquivos','Pedido de análise, sem parâmetros'],sai:['Rascunho com id','Afirmações sugeridas','Status Em análise, na hora'],
+ pq:['Resultados antigos saem antes da nova análise: se ela falhar, não sobra análise velha.','A data da verificação usa o fuso de São Paulo e é definida pelo servidor.'],
+ cod:['fomo/backend/app/main.py','fomo/backend/app/schemas.py']},
+{id:'a-cliente',k:'rota',z:'api',x:1635,y:415,w:245,eb:'Integração',t:'Cliente da VeritAI',
+ tx:'Monta o pedido, chama a VeritAI em segundo plano e confere a resposta contra o contrato.',ch:['timeout 600 s'],
+ faz:'Monta o pedido com título, texto e data da notícia, as afirmações, as evidências com texto e o número de anexos sem texto. Chama POST /analisar numa tarefa em segundo plano do próprio processo e valida a resposta. Se a VeritAI cair ou responder fora do contrato, a notícia vai para Erro na análise e pode ser reenviada.',
+ entra:['Notícia, afirmações e anexos do banco','Relatório da VeritAI (JSON)'],sai:['Pedido de análise (JSON)','Relatório e versões gravados no banco'],
+ pq:['FOMO e VeritAI são serviços separados, ligados por um contrato HTTP. A API do FOMO não carrega torch.','Se a API reiniciar no meio de uma análise, a notícia vai para Erro na análise quando ela subir de novo.'],
+ fora:['Modo embutido (fop.py e retrieval.py): o pipeline antigo, mantido por compatibilidade e fora da imagem de deploy.'],
+ cod:['fomo/backend/app/veritai_client.py','fomo/backend/app/veritai_contrato.py']},
+{id:'a-anexos',k:'rota',z:'api',x:1280,y:655,w:245,eb:'Entrada de dados',t:'Anexos e links',
+ tx:'PDF e TXT viram texto para a comparação. Imagens ficam só para o revisor.',ch:['até 5 MB'],
+ faz:'Aceita TXT, PDF, PNG e JPG de até 5 MB, salvos com nome aleatório. Extrai até 40 mil caracteres; do PDF, até 20 páginas, com pypdf. Para links, a API lê a página HTML pública. O que tem texto vira evidência; o que não tem fica como anexo para conferência manual.',
+ entra:['Arquivo (multipart) ou URL'],sai:['Evidência com texto','Anexo sem texto, para o revisor'],
+ pq:['Imagens e documentos sem texto não são avaliados pela IA.'],num:['até 20 evidências e 20 anexos sem texto por análise'],
+ cod:['fomo/backend/app/main.py · add_evidence_file']},
+{id:'a-estados',k:'regra',z:'api',x:1635,y:655,w:245,eb:'Regra de negócio',t:'Estados da notícia',
+ flow:[['Rascunho'],['Em análise automática'],['Aguardando revisão','Precisa de evidências','Erro'],['Publicada*','Devolvida']],
+ faz:'Se alguma afirmação ficou com evidências insuficientes, a notícia vai para Precisa de evidências. Nos outros casos, inclusive com contradição, vai para Aguardando revisão. O revisor aprova (Publicada), devolve (Devolvida ao publisher) ou pede comprovação (Precisa de evidências). Erro na análise volta para o publisher reenviar.',
+ pq:['A análise nunca publica nem bloqueia sozinha.','Aprovar exige análise concluída, ou comprovação anexada e conferida.'],
+ cod:['fomo/backend/app/main.py · status_after_analysis, review_article']},
+{id:'a-revisor',k:'rota',z:'api',x:1280,y:945,w:245,eb:'Rotas do revisor',t:'/review/*',far:'Rotas do revisor',
+ tx:'Fila, anexos e decisão. Cada decisão leva uma nota.',ch:['X-Reviewer-Key'],
+ faz:'GET /review/articles lista Aguardando revisão e Precisa de evidências, com o relatório completo. GET /review/attachments/{id} entrega o arquivo anexado. POST /review/articles/{id} grava a decisão e a nota.',
+ entra:['Decisão e nota (JSON)'],sai:['Fila com relatório completo','Arquivo anexado'],cod:['fomo/backend/app/main.py']},
+{id:'a-db',k:'banco',z:'api',x:1635,y:945,w:245,eb:'Armazenamento',t:'Banco do FOMO',
+ tx:'SQLite com notícias, afirmações, evidências e o relatório completo de cada análise.',ch:['takta.sqlite3','volume fomo-data'],
+ faz:'Tabelas articles, claims, evidence e analises. A tabela analises guarda o relatório JSON inteiro e as versões dos modelos, da configuração e da base usadas. O nome takta vem do nome antigo do projeto.',
+ pq:['SQLite e uma réplica só: simples para o MVP, porque a análise roda no mesmo processo da API.','Guardar relatório e versões permite auditar cada decisão depois.'],
+ cod:['fomo/backend/app/db.py']},
+
+// VeritAI
+{id:'v-api',k:'ia',z:'veritai',x:2080,y:175,w:230,eb:'Serviço',t:'API da VeritAI',
+ tx:'Porta 8100: /extrair, /analisar e /health. Sem autenticação, por isso só na rede interna.',ch:['CPU','contêiner próprio'],
+ faz:'Recebe os pedidos da API do FOMO e devolve relatórios. A mesma imagem roda no SageMaker (comando serve, porta 8080, /ping e /invocations); isso foi testado só localmente.',
+ entra:['Pedido de extração','Pedido de análise, de 1 a 10 afirmações'],sai:['Afirmações candidatas (JSON)','Relatório da análise (JSON)'],
+ pq:['Serviço separado: modelos pesados isolados e contrato estável, testado com modelos e busca simulados.','Só CPU, para manter o custo perto de zero.'],
+ num:['V1: cerca de 2,6 s por afirmação com a base própria, num Mac M4 sem GPU; V0: 0,3 s','Pico de memória da V1: 3,6 GB','232 testes automatizados'],
+ cod:['veritai/veritai/api.py','veritai/veritai/relatorio.py']},
+{id:'v-extrair',k:'ia',z:'veritai',x:2080,y:430,w:230,eb:'Rota',t:'POST /extrair',
+ tx:'Propõe afirmações candidatas por regras, sem LLM. O publisher confirma, edita ou descarta.',ch:['sem LLM','alertas'],
+ faz:'Divide título e texto em frases e descarta rotina de página, perguntas, opinião e frases sem número, nome ou data. Pontua número, período, nome próprio, atribuição e verbo de fato. Completa datas relativas pela data da notícia: “nesta terça-feira (6)” vira “6 de outubro de 2026”. Cada candidata traz alertas: sem período, depende da frase anterior, futuro ou intenção, citação.',
+ entra:['Título, texto e data da notícia'],sai:['Até 10 candidatas, com trecho de origem, pontuação, sinais, atribuição e alertas'],
+ pq:['Com LLM, seria preciso decidir onde o modelo roda, e a notícia não publicada não deve sair da infraestrutura do projeto.'],
+ num:['90% das candidatas são fatos verificáveis','Só 12% delas têm um fato só e se entendem sozinhas, por isso o publisher edita'],
+ cod:['veritai/veritai/extracao.py']},
+{id:'v-perfis',k:'ia',z:'veritai',x:2080,y:690,w:230,eb:'Configuração',t:'Perfis e limiares',
+ tx:'Perfis V0 e V1, limiares, seleção de janelas e regras do verificador num arquivo só, com versão.',ch:['config.json','calibrado: false'],
+ faz:'O perfil é escolhido pela variável VERITAI_PERFIL; o deploy usa a V1. V0: MiniLM-L12 para similaridade e MiniLMv2-L6 para NLI. V1: multilingual-e5-base e mDeBERTa-v3-base. A versão da configuração vai em cada relatório.',
+ pq:['Limiares fora do código: mudar um número gera nova versão, rastreável no relatório.','Os limiares de trecho forte foram mantidos porque a varredura mostrou um platô.'],
+ num:['Similaridade forte ≥ 0,43','NLI forte ≥ 0,72','3 janelas por fonte, até 6 fontes'],cod:['veritai/veritai/config.json']},
+{id:'s1',k:'etapa',n:1,z:'veritai',x:2400,y:175,w:300,eb:'Etapa 1 de 8',t:'Busca de fontes',
+ tx:'Base própria (BM25 + vetores, RRF), evidências do publisher e, se ligada, a web.',
+ faz:'Para cada afirmação, junta três origens. Na base própria, a busca por palavras (FTS5, BM25) e a busca por vetores do perfil são fundidas por RRF (k = 60), em até 10 trechos. Entram também as evidências com texto do publisher e, se a busca na web estiver ligada, notícias do Bing News e do GDELT. Checagens anteriores entram só como informação para o revisor.',
+ entra:['Afirmação','Data da notícia'],sai:['Fontes candidatas, com texto e data','Checagens anteriores'],
+ pq:['Busca híbrida: palavras-chave acham números e siglas exatos; vetores acham paráfrases.','A web descobre documentos, mas não decide o resultado.'],
+ cod:['veritai/veritai/pipeline.py','veritai/veritai/base/busca.py']},
+{id:'s2',k:'etapa',n:2,z:'veritai',x:2400,y:307,w:300,eb:'Etapa 2 de 8',t:'Filtro de data',
+ tx:'Fontes publicadas depois do dia da notícia saem. As sem data entram e viram limitação.',
+ faz:'Compara a data de cada fonte, de qualquer origem, com a data da notícia. As do mesmo dia entram. Se a data da notícia vier em outro formato, nada é filtrado e o relatório registra isso.',
+ pq:['Evita julgar uma afirmação com o que só foi publicado depois dela.'],cod:['veritai/veritai/pipeline.py · filtrar_por_data']},
+{id:'s3',k:'etapa',n:3,z:'veritai',x:2400,y:439,w:300,eb:'Etapa 3 de 8',t:'Fontes independentes',
+ tx:'Páginas do mesmo domínio ou cópias quase literais contam como uma fonte só.',
+ faz:'Agrupa páginas do mesmo domínio e cópias quase literais, de qualquer origem, comparando sequências de 5 palavras (Jaccard ≥ 0,8).',
+ pq:['Dez sites copiando o mesmo release não são dez confirmações.'],fora:['Matérias reescritas a partir da mesma origem ainda contam como independentes.'],cod:['veritai/veritai/copias.py']},
+{id:'s4',k:'etapa',n:4,z:'veritai',x:2400,y:571,w:300,eb:'Etapa 4 de 8',t:'Janelas e seleção',
+ tx:'Cada fonte vira janelas de 1 e 2 frases. Ficam as 3 mais parecidas, em até 6 fontes.',
+ faz:'O modelo de embedding do perfil mede a similaridade entre a afirmação e cada janela. A seleção prioriza domínios diferentes antes de repetir páginas do mesmo site.',
+ pq:['Janelas curtas: o NLI compara frase com frase, e trechos longos diluem a relação.','Limitar os pares deixa o custo de CPU previsível.'],cod:['veritai/veritai/modelos.py · janelas, selecionar']},
+{id:'s5',k:'etapa',n:5,z:'veritai',x:2400,y:703,w:300,eb:'Etapa 5 de 8',t:'NLI',
+ tx:'Para cada par de janela e afirmação: chance de apoiar, ser neutra ou contradizer.',
+ faz:'Inferência em linguagem natural: a janela é a premissa e a afirmação, a hipótese. Antes, meses citados sem ano ganham o ano de referência, só na entrada do modelo.',
+ pq:['Responde exatamente à pergunta da verificação, sem treino no domínio.','Mesma entrada, mesma saída: cada resultado pode ser refeito e explicado.'],
+ fora:['LLM generativo decidindo o resultado: custo por palavra ou GPU, envio da notícia a terceiros, alucinações e instruções escondidas nas páginas lidas.'],
+ num:['NLI da V1 em float32 na CPU: 141 pares caíram de 48,5 s para 6,7 s, sem mudar nenhuma predição'],cod:['veritai/veritai/modelos.py']},
+{id:'s6',k:'etapa',n:6,z:'veritai',x:2400,y:835,w:300,eb:'Etapa 6 de 8',t:'Verificador',
+ tx:'Confere entidade, período e número. Só rebaixa apoio ou contradição para neutro.',
+ faz:'As entidades da afirmação precisam estar na fonte, os períodos explícitos precisam coincidir e cada número precisa aparecer com o mesmo valor, sinal, unidade e entidade ligada. “408 pontos em Leitura” não sustenta “408 pontos em Matemática”. Cada intervenção aparece nas limitações do relatório.',
+ pq:['O NLI aprovava frases parecidas com outra entidade, outro mês ou outro número: IPCA contra IPCA-15, 0,32% contra -0,32%.','Só rebaixa: o verificador nunca cria uma aprovação.'],
+ num:['Vizinhos com busca, V1: macro-F1 de 0,264 para 0,617','Falsas aprovações de 7,6% para 0%'],
+ fora:['Variante que só bloqueia a contradição quando o documento inteiro é de outro tema: medida e desligada (14 falsas refutações na V0).'],
+ cod:['veritai/veritai/verificador.py']},
+{id:'s7',k:'etapa',n:7,z:'veritai',x:2400,y:967,w:300,eb:'Etapa 7 de 8',t:'Agregação por regras',
+ tx:'Trecho forte: similaridade ≥ 0,43 e NLI ≥ 0,72. Conta por fonte independente.',
+ faz:'Por fonte, ficam a janela de maior apoio e a de maior contradição. Só apoio forte: as evidências apoiam. Só contradição forte: contradizem. Os dois, de fontes independentes: conclusões diferentes. Nenhum: evidências insuficientes.',
+ pq:['Regras explícitas: cada resultado se explica trecho a trecho.','Falta de evidência nunca vira contradição.'],cod:['veritai/veritai/regras.py']},
+{id:'s8',k:'etapa',n:8,z:'veritai',x:2400,y:1099,w:300,eb:'Etapa 8 de 8',t:'Relatório por afirmação',
+ tx:'Resultado, texto público, evidências, justificativa e limitações. Porcentagem sempre nula.',
+ faz:'Cada afirmação recebe resultado, texto para o leitor, fontes independentes, evidências com a relação de cada trecho, checagens anteriores, justificativa e limitações. O campo avaliavel vem false e porcentagem vem null, com o motivo. O relatório traz ainda avisos de falhas de busca e as versões usadas.',
+ sai:['Relatório da análise (JSON) para a API do FOMO'],
+ pq:['Sem calibração com dados rotulados, uma porcentagem seria enganosa.'],cod:['veritai/veritai/relatorio.py']},
+{id:'v-base',k:'banco',z:'veritai',x:2780,y:175,w:300,eb:'Armazenamento',t:'Base própria de evidências',far:'Base própria',
+ tx:'590 documentos públicos, 2.164 trechos e 102 checagens. Busca por palavras e por vetores.',ch:['veritai.sqlite3','FTS5'],
+ faz:'Tabelas de cargas, documentos, trechos (150 palavras, com 30 de sobreposição), índice FTS5, vetores por perfil e checagens. Cada análise lê um único snapshot, registrado no relatório.',
+ pq:['Fontes oficiais e datadas: IBGE (300), Agência Gov (100), INEP (100) e Agência Brasil (90).','Sem a base, o serviço funciona só com o publisher e a web.'],
+ fora:['PostgreSQL com pgvector: planejado.'],cod:['veritai/veritai/base/']},
+{id:'v-url',k:'ia',z:'veritai',x:2780,y:430,w:300,eb:'Componente',t:'Busca na web e leitura segura',far:'Busca na web',
+ tx:'Bing News, GDELT e Google Fact Check. Cada página é lida num IP público já validado.',ch:['desligada no deploy'],
+ faz:'Monta os termos de busca a partir da afirmação, lê as páginas encontradas com limite de tamanho e extrai a data da página (JSON-LD ou metadados).',
+ pq:['Proteção contra SSRF: o DNS é resolvido uma vez, a conexão vai ao IP validado e o TLS usa o nome original.','No deploy, VERITAI_BUSCAR_WEB=false: ligada, a busca mandaria termos de notícias ainda não publicadas ao Bing e ao GDELT.'],
+ cod:['veritai/veritai/fontes.py']},
+{id:'v-modelos',k:'ia',z:'veritai',x:2780,y:650,w:300,eb:'Modelos pré-treinados',t:'Embedding e NLI',
+ tx:'Pesos baixados no build da imagem. Em execução, o Hugging Face fica offline.',ch:['sem treino','HF_HUB_OFFLINE=1'],
+ faz:'V1: intfloat/multilingual-e5-base, com os prefixos query e passage, e MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7. V0: paraphrase-multilingual-MiniLM-L12-v2 e multilingual-MiniLMv2-L6-mnli-xnli.',
+ pq:['Sem treino: não existe conjunto em português com afirmação, evidência e quatro classes sem ressalvas graves.','Pesos fixos dentro do contêiner: a notícia não sai da infraestrutura.'],
+ fora:['Modelo ajustado (XLM-RoBERTa): só substitui o atual com macro-F1 maior e falsas aprovações iguais ou menores na validação, seguido de calibração.'],
+ cod:['veritai/veritai/modelos.py','veritai/Dockerfile']},
+{id:'v-rastro',k:'ia',z:'veritai',x:2780,y:1060,w:300,eb:'Auditoria',t:'Rastreabilidade',
+ tx:'Cada relatório registra modelo, NLI, embedding, versão da configuração e snapshot da base.',ch:['versoes'],
+ pq:['Evidência rastreável: qualquer resultado pode ser refeito com as mesmas versões.'],cod:['veritai/veritai/pipeline.py · versoes']},
+
+// Fora do sistema
+{id:'e-web',k:'externo',z:'ext',x:3210,y:380,w:285,eb:'Externo',t:'Bing News RSS e GDELT',far:'Bing News e GDELT',
+ tx:'Descoberta de notícias na web. Opcional e desligada no deploy.',ch:['opcional']},
+{id:'e-fc',k:'externo',z:'ext',x:3210,y:545,w:285,eb:'Externo',t:'Google Fact Check Tools',far:'Google Fact Check',
+ tx:'Checagens anteriores (ClaimReview). O revisor as vê como candidatas, a conferir.',ch:['chave opcional']},
+{id:'e-hf',k:'externo',z:'ext',x:3210,y:710,w:285,eb:'Externo',t:'Hugging Face Hub',
+ tx:'De onde os pesos dos modelos são baixados, uma vez, no build da imagem.',ch:['só no build']},
+{id:'e-fontes',k:'externo',z:'ext',x:3210,y:1040,w:285,eb:'Externo',t:'Fontes públicas oficiais',far:'Fontes oficiais',
+ tx:'IBGE, INEP, Agência Gov e Agência Brasil.',ch:['robots.txt','Crawl-delay']},
+
+// Dados e avaliação
+{id:'d-fontes',k:'dados',z:'dados',x:2080,y:1365,w:235,eb:'Documento',t:'Lista de fontes',
+ tx:'Quais fontes entram, como, com que licença e o robots.txt de cada uma.',ch:['fontes.md'],
+ pq:['A base usa só a lista de fontes confiáveis definida pelo grupo, sem coleta em massa.','As notícias fictícias do FOMO nunca entram.'],
+ num:['Agência Brasil: CC BY 4.0','INEP: CC BY-ND 3.0','IBGE e Agência Gov: termos a confirmar'],cod:['veritai-dados/fontes/fontes.md']},
+{id:'d-coleta',k:'dados',z:'dados',x:2375,y:1365,w:235,eb:'Script',t:'Coleta',
+ tx:'Gera um manifesto por fonte: URL, título, data e, na API do IBGE, o texto.',ch:['listar.py'],
+ faz:'Respeita robots.txt e Crawl-delay e não contorna bloqueio anti-robô.',sai:['Manifestos .jsonl em saida/'],cod:['veritai-dados/coleta/listar.py']},
+{id:'d-indexar',k:'dados',z:'dados',x:2670,y:1365,w:235,eb:'Scripts',t:'Carga e indexação',
+ tx:'Carrega os manifestos com a carga da própria VeritAI e calcula os vetores de cada perfil.',ch:['carregar.py','indexar'],
+ entra:['Manifestos .jsonl','Checagens com classe proposta'],sai:['veritai.sqlite3, fora do git'],
+ pq:['Usar a carga da VeritAI garante o mesmo formato que o serviço lê.'],cod:['veritai-dados/coleta/carregar.py','python -m veritai.base indexar --perfil v1']},
+{id:'d-checagens',k:'dados',z:'dados',x:2965,y:1365,w:235,eb:'Dados',t:'Checagens e mapeamento',far:'Checagens',
+ tx:'102 checagens de 8 agências, com o veredito mapeado para as 4 classes; 45 revisadas.',ch:['vereditos.csv'],
+ faz:'As checagens vêm do Google Fact Check (ClaimReview). O mapeamento propõe uma classe da VeritAI para cada veredito de agência, e um anotador confere.',cod:['veritai-dados/mapeamento/']},
+{id:'d-eda',k:'dados',z:'dados',x:3260,y:1365,w:235,eb:'Notebooks · Colab',t:'EDA dos conjuntos públicos',far:'EDA',
+ tx:'AVeriTeC, AVERITEC-BR e LIAR-BR, por Isabel Azar.',ch:['semana 3'],
+ faz:'Explorou classes, tamanhos e evidências dos conjuntos públicos de checagem.',
+ pq:['Não treinar no AVeriTeC: ele entra só como teste de estresse.','Prioridade à verificação de números e períodos.','Entidades por regras, e não por NER genérico.','Métricas por classe.'],cod:['veritai-dados/eda/']},
+{id:'d-conjuntos',k:'dados',z:'dados',x:2080,y:1630,w:235,eb:'Dados rotulados',t:'Conjuntos de avaliação',far:'Conjuntos',
+ tx:'Desenvolvimento 65, validação 43, vizinhos 140, notícias reais 71, extração 150, contraste 28.',ch:['.jsonl'],
+ faz:'Afirmações escritas por IA a partir de evidências reais da base e conferidas por um anotador. A validação foi separada antes de qualquer ajuste de regra. As notícias reais e a extração saem do /extrair.',
+ pq:['Separar ajuste e teste evita vazamento.'],fora:['Falta um segundo anotador, e a conferência humana cega das notícias reais está pendente.'],cod:['veritai-dados/rotulos/']},
+{id:'d-revisao',k:'dados',z:'dados',x:2375,y:1630,w:235,eb:'Processo',t:'Revisão humana dos rótulos',far:'Revisão dos rótulos',
+ tx:'Planilhas cegas por anotador, guia de anotação e consolidação com kappa.',ch:['.xlsx','kappa'],cod:['veritai-dados/revisao/']},
+{id:'d-avaliacao',k:'dados',z:'dados',x:2670,y:1630,w:235,eb:'Notebook e scripts',t:'Avaliação',
+ tx:'Macro-F1, falsas aprovações e falsas refutações, com IC95, por perfil e conjunto.',ch:['avaliar.py','bateria.py'],
+ faz:'Roda o mesmo pipeline do serviço sobre os conjuntos, compara perfis e configurações do verificador e varre os limiares.',
+ num:['Validação, V1: macro-F1 0,589 e 4,8% de falsas aprovações (V0: 19,0%)','Vizinhos com busca, V1: 0,617 e nenhuma falsa aprovação','Notícias reais: nenhuma falsa aprovação e 22,7% de falsas refutações, contra uma conferência por IA (provisório)','AVeriTeC intocado, V1: 0,201 em português'],
+ pq:['A taxa de falsas aprovações é a métrica de segurança; o revisor humano existe também para as falsas refutações.'],
+ cod:['veritai-dados/avaliacao/avaliacao_veritai.ipynb','veritai/eval/avaliar.py']},
+{id:'d-assin2',k:'dados',z:'dados',x:2965,y:1630,w:235,eb:'Experimento',t:'Modelo treinado no ASSIN 2',far:'ASSIN 2',
+ tx:'Regressão logística sobre similaridade e NLI. Mais macro-F1, mais falsas aprovações: não adotado.',ch:['.pkl','fora da API'],
+ num:['Macro-F1: 0,897 contra 0,887 do NLI sem treino','Falsas aprovações: 0,128 contra 0,095'],
+ pq:['Não cumpre o critério de substituição: as falsas aprovações não podem aumentar.','Frases genéricas com rótulo binário, e não notícias em quatro classes.'],cod:['veritai/modelo/treinar_e_avaliar.ipynb']},
+{id:'d-relatorio',k:'dados',z:'dados',x:3260,y:1630,w:235,eb:'Documentos',t:'Relatório técnico e requisitos',far:'Relatório e requisitos',
+ tx:'132 requisitos atômicos com matriz de rastreabilidade e o relatório técnico da VeritAI.',ch:['fomo-requisitos','fomo-docs'],
+ cod:['fomo-requisitos/docs','fomo-docs/entregas/semana-5-modelo']},
+
+// Infraestrutura
+{id:'i-dns',k:'infra',z:'infra',x:70,y:1285,w:290,eb:'Rede',t:'Domínio e certificado',
+ tx:'O DuckDNS aponta para o IP fixo da VM, e o Caddy emite o certificado no Let’s Encrypt.',ch:['HTTPS'],
+ faz:'Na rede da UnB, o firewall bloqueia DNS dinâmico. Por isso o Caddy também atende pelo nome padrão da AWS, só em HTTP.',
+ fora:['Pelo nome da AWS, as chaves trafegam sem criptografia: trocá-las depois da apresentação.']},
+{id:'i-caddy',k:'infra',z:'infra',x:440,y:1285,w:290,eb:'Contêiner web',t:'Caddy',
+ tx:'Serve o frontend em / e repassa /api para a API do FOMO. Mesma origem, sem CORS.',ch:['HTTPS automático','até 6 MB'],
+ pq:['Uma origem só: sem CORS e sem expor a API em outro endereço.','Cabeçalhos de segurança e compressão num lugar só.'],cod:['fomo/deploy/Caddyfile']},
+{id:'i-compose',k:'infra',z:'infra',x:810,y:1285,w:290,eb:'Docker Compose',t:'Três contêineres',
+ tx:'web, fomo-api e veritai numa máquina. A VeritAI não publica porta.',ch:['read_only','healthchecks'],
+ faz:'Volumes: fomo-data (banco e anexos), veritai-data (base), cache dos modelos por perfil e certificados. Sistema de arquivos só leitura, com /tmp em memória. A API só sobe com a VeritAI saudável, e o Caddy só com a API saudável. Uma tarefa avulsa copia a base para o volume pela API de backup do SQLite.',
+ pq:['A VeritAI aceita qualquer chamada: sem porta, só a API do FOMO a alcança.','Uma réplica da API, porque o SQLite e a análise em segundo plano vivem no mesmo processo.'],cod:['fomo/deploy/docker-compose.yml']},
+{id:'i-ec2',k:'infra',z:'infra',x:1180,y:1285,w:290,eb:'Nuvem · AWS',t:'VM EC2',
+ tx:'m7i-flex.large (2 vCPU, 8 GB) em us-east-2, nos créditos do plano gratuito.',ch:['Ubuntu 24.04'],
+ pq:['8 GB cobrem o pico de 3,6 GB da V1.','Deploy de avaliação, para apagar depois da apresentação.'],
+ fora:['Oracle Always Free (ARM, 12 GB): sem capacidade em São Paulo em 13/10.','Google Cloud: o teste gratuito no Brasil exige pré-pagamento.']},
+{id:'i-terraform',k:'infra',z:'infra',x:1550,y:1285,w:290,eb:'Infraestrutura como código',t:'Terraform e cloud-init',far:'Terraform',
+ tx:'Cria rede, firewall (22, 80 e 443), IP fixo e a VM. O cloud-init instala o Docker.',ch:['AWS · GCP · Oracle'],
+ pq:['Sobe e apaga com um comando. Os três provedores entregam a mesma VM e as mesmas saídas.'],cod:['infra/aws/main.tf','infra/aws/cloud-init.yaml']},
+{id:'i-pages',k:'infra',z:'infra',x:70,y:1555,w:290,eb:'Hospedagem estática',t:'GitHub Pages',
+ tx:'Só o frontend. Sem uma API configurada, a página avisa que ela está desligada.',ch:['FOMO_API_URL'],
+ faz:'Para ligar a página a uma API pública, define-se a variável FOMO_API_URL no repositório e a origem do Pages em FOMO_CORS_ORIGINS.',cod:['fomo/.github/workflows/pages.yml']},
+{id:'i-ci',k:'infra',z:'infra',x:440,y:1555,w:290,eb:'Automação',t:'GitHub Actions',
+ tx:'Testes e imagens no GHCR, frontend no Pages e site de embeddings.',ch:['CI'],
+ num:['232 testes na VeritAI e 31 na API do FOMO, com modelos e busca simulados'],cod:['veritai/.github/workflows/ci.yml','fomo/.github/workflows/pages.yml']},
+{id:'i-imagens',k:'infra',z:'infra',x:810,y:1555,w:290,eb:'Docker',t:'Imagens',
+ tx:'fomo-api sem torch; veritai com torch só-CPU, os modelos do perfil e usuário sem privilégios.',ch:['estágio de teste'],
+ faz:'Os Dockerfiles têm um estágio de teste que roda a suíte e fica fora da imagem final. A imagem web leva o build do Angular e o Caddyfile.',
+ pq:['Modelos dentro da imagem: nenhum download ao ligar, e o resultado não depende da rede.'],cod:['fomo/Dockerfile','veritai/Dockerfile']},
+{id:'i-implantar',k:'infra',z:'infra',x:1180,y:1555,w:290,eb:'Scripts',t:'implantar.sh e demo.sh',far:'Implantação',
+ tx:'Enviam o código e a base, geram as chaves na VM e sobem o compose. O demo.sh prepara e reseta a demonstração.',
+ pq:['git archive: a VM não guarda clone nem credenciais do repositório.','As chaves nascem na VM e não vão para o git.'],cod:['infra/implantar.sh','infra/demo.sh']},
+{id:'i-nuvem',k:'infra',z:'infra',x:1550,y:1555,w:290,eb:'Preparado, não implantado',t:'Outros caminhos de nuvem',far:'Outras nuvens',
+ tx:'SageMaker assíncrono com ponte via S3, Kubernetes com CloudFormation e k8s local com túnel.',ch:['geram custo'],
+ pq:['Endpoint assíncrono: o de tempo real corta em 60 s, e o assíncrono desliga quando não há pedidos.','Não implantados porque geram custo.'],cod:['veritai/deploy/','veritai/veritai/ponte.py']},
+];
+
+const EDGES = [
+ {a:'p-leitor',b:'f-feed',k:'acao',l:'abre o feed'},
+ {a:'p-publisher',b:'f-publisher',k:'acao',l:'notícia, afirmações e anexos',lw:110},
+ {a:'p-revisor',b:'f-revisao',k:'acao',l:'decisão e nota'},
+ {a:'f-feed',b:'f-marca',k:'interno'},
+ {a:'f-feed',b:'f-cliente',k:'interno'},
+ {a:'f-publisher',b:'f-cliente',k:'interno'},
+ {a:'f-revisao',b:'f-cliente',k:'interno'},
+ {a:'f-cliente',b:'a-publico',k:'http',l:'GET /articles → notícias públicas'},
+ {a:'f-cliente',b:'a-publisher',k:'http',l:'JSON e arquivos, com X-Publisher-Key'},
+ {a:'f-cliente',b:'a-revisor',k:'http',l:'fila e decisão, com X-Reviewer-Key'},
+ {a:'f-build',b:'i-caddy',k:'build',l:'dist/ na imagem web'},
+ {a:'a-auth',b:'a-publisher',k:'interno'},
+ {a:'a-publisher',b:'a-anexos',k:'dados',l:'arquivo ou URL'},
+ {a:'a-publisher',b:'a-cliente',k:'interno',l:'sugerir e analisar',lw:90},
+ {a:'a-anexos',b:'a-cliente',k:'dados',l:'texto das evidências',lw:90},
+ {a:'a-cliente',b:'a-estados',k:'interno',l:'resultados'},
+ {a:'a-revisor',b:'a-estados',k:'interno',l:'decisão',lw:90},
+ {a:'a-estados',b:'a-db',k:'dados',l:'status, evidências e relatório JSON',lw:170},
+ {a:'a-cliente',b:'v-api',k:'http',l:'POST /extrair e POST /analisar (JSON)',lw:150},
+ {a:'v-api',b:'v-extrair',k:'interno',l:'notícia → candidatas'},
+ {a:'v-api',b:'s1',k:'interno',l:'por afirmação',lw:72},
+ {a:'s1',b:'s2',k:'interno'},{a:'s2',b:'s3',k:'interno'},{a:'s3',b:'s4',k:'interno'},{a:'s4',b:'s5',k:'interno'},
+ {a:'s5',b:'s6',k:'interno'},{a:'s6',b:'s7',k:'interno'},{a:'s7',b:'s8',k:'interno'},
+ {a:'s1',b:'v-base',k:'dados',l:'consulta',lw:70},
+ {a:'s1',b:'v-url',k:'opcional'},
+ {a:'v-url',b:'e-web',k:'opcional',l:'termos de busca',lw:100},
+ {a:'v-url',b:'e-fc',k:'opcional',l:'ClaimReview',lw:100},
+ {a:'e-hf',b:'v-modelos',k:'build',l:'pesos, no build',lw:100},
+ {a:'v-modelos',b:'s4',k:'interno',l:'embedding',lw:70},
+ {a:'v-modelos',b:'s5',k:'interno',l:'NLI',lw:70},
+ {a:'v-perfis',b:'s4',k:'dados'},
+ {a:'v-perfis',b:'s7',k:'dados',l:'limiares',lw:70},
+ {a:'s8',b:'v-rastro',k:'dados',l:'versões',lw:70},
+ {a:'e-fontes',b:'d-coleta',k:'dados',l:'páginas e API do IBGE',lw:120},
+ {a:'d-fontes',b:'d-coleta',k:'dados'},
+ {a:'d-coleta',b:'d-indexar',k:'dados',l:'.jsonl',lw:60},
+ {a:'d-checagens',b:'d-indexar',k:'dados'},
+ {a:'d-indexar',b:'v-base',k:'dados',l:'veritai.sqlite3',s:'t',t:{side:'r',off:70},via:[[2787.5,1335],[3145,1335],[3145,245]],lp:[2965,1335]},
+ {a:'d-conjuntos',b:'d-revisao',k:'dados',l:'.xlsx',lw:56},
+ {a:'d-revisao',b:'d-avaliacao',k:'dados',l:'.jsonl',lw:60},
+ {a:'d-avaliacao',b:'v-perfis',k:'dados',l:'limiares mantidos · V1 no deploy',lw:170,s:'t',t:'b',via:[[2787.5,1600],[2935,1600],[2935,1255],[2195,1255]],lp:[2861,1600]},
+ {a:'d-avaliacao',b:'d-relatorio',k:'dados',l:'métricas com IC95',lw:150,s:'b',t:'b',via:[[2787.5,1850],[3377.5,1850]],lp:[3085,1850]},
+ {a:'d-assin2',b:'d-relatorio',k:'dados',l:'.pkl',lw:50},
+ {a:'d-eda',b:'d-relatorio',k:'dados',l:'achados da semana 3',lw:120},
+ {a:'i-dns',b:'i-caddy',k:'build',l:'DNS',lw:64},
+ {a:'i-compose',b:'i-caddy',k:'build',l:'80 e 443',lw:50},
+ {a:'i-ec2',b:'i-compose',k:'build',l:'roda',lw:60},
+ {a:'i-terraform',b:'i-ec2',k:'build',l:'cria',lw:60},
+ {a:'i-implantar',b:'i-ec2',k:'build',l:'código, base e chaves',lw:110},
+ {a:'i-imagens',b:'i-compose',k:'build',l:'build na VM',lw:110},
+ {a:'i-ci',b:'i-pages',k:'build',l:'a cada push',lw:50},
+];
+
+const TOURS = [
+ {t:'Uma notícia, do rascunho ao feed', steps:[
+  {c:['p-publisher','f-publisher'], tx:'O veículo escreve a notícia no console do publisher e indica até oito afirmações factuais.'},
+  {c:['f-publisher','f-cliente','a-publisher','a-cliente','v-api','v-extrair'], tx:'Se quiser, clica em Sugerir afirmações. O /extrair propõe frases por regras, com alertas, e nada vem marcado.'},
+  {c:['a-publisher','a-anexos'], tx:'Links e arquivos viram evidências. PDF e TXT entram na comparação; imagens ficam para o revisor.'},
+  {c:['a-publisher','a-anexos','a-cliente','v-api'], tx:'Ao enviar para análise, a API responde na hora com Em análise e chama a VeritAI em segundo plano.'},
+  {c:['v-api','s1','s2','s3','s4','s5','s6','s7','s8'], tx:'A VeritAI analisa cada afirmação em oito etapas e devolve um relatório. O fluxo Dentro da VeritAI mostra cada etapa.'},
+  {c:['a-cliente','a-estados','a-db'], tx:'A API confere o relatório contra o contrato e grava tudo. Evidência insuficiente leva a Precisa de evidências; o resto vai para Aguardando revisão.'},
+  {c:['p-revisor','f-revisao','f-cliente','a-revisor','a-estados'], tx:'O revisor lê o relatório, vê a contradição em destaque e decide, sempre com uma nota.'},
+  {c:['a-publico','f-cliente','f-feed','f-marca','p-leitor'], tx:'Só a aprovação publica. O leitor vê o resultado de cada afirmação, com as fontes.'},
+ ]},
+ {t:'Dentro da VeritAI', steps:[
+  {c:['a-cliente','v-api','s1'], tx:'O /analisar recebe de 1 a 10 afirmações e trata cada uma separadamente.'},
+  {c:['s1','v-base','v-url','e-web','e-fc'], tx:'Busca: base própria por palavras e vetores, evidências do publisher e, se ligada, a web. Checagens anteriores só informam.'},
+  {c:['s2'], tx:'Nada do futuro: fontes publicadas depois do dia da notícia ficam de fora.'},
+  {c:['s3'], tx:'Cópias e páginas do mesmo domínio contam como uma fonte só.'},
+  {c:['s4','v-modelos','v-perfis'], tx:'Cada fonte vira janelas de 1 e 2 frases. O embedding escolhe as 3 mais parecidas, em até 6 fontes.'},
+  {c:['s5','v-modelos','e-hf'], tx:'O NLI dá, para cada janela, a chance de apoiar, ser neutra ou contradizer. Os pesos estão dentro da imagem.'},
+  {c:['s6'], tx:'O verificador confere entidade, período e número e só rebaixa. Com busca na base, levou o macro-F1 de 0,264 para 0,617.'},
+  {c:['s7','v-perfis'], tx:'Regras explícitas transformam os trechos fortes em um dos quatro resultados, contando fontes independentes.'},
+  {c:['s8','v-rastro'], tx:'O relatório traz evidências, justificativa, limitações e as versões usadas. Porcentagem, só depois de calibrar.'},
+ ]},
+ {t:'Quem vê o quê', steps:[
+  {c:['p-leitor','f-feed','f-cliente','a-publico'], tx:'O leitor não tem login. A rota pública devolve só notícias publicadas e só o texto público.'},
+  {c:['p-publisher','f-publisher','f-cliente','a-auth','a-publisher'], tx:'O publisher usa a própria chave. Sem ela, a API responde 401.'},
+  {c:['p-revisor','f-revisao','f-cliente','a-revisor','a-auth'], tx:'O revisor tem outra chave e é o único que vê o relatório completo e os anexos.'},
+  {c:['a-cliente','v-api','i-compose'], tx:'A VeritAI não tem autenticação, então não tem porta pública. Só a API do FOMO a alcança, pela rede interna.'},
+  {c:['v-url','v-modelos','v-extrair','e-web'], tx:'O texto da notícia não publicada fica na infraestrutura: busca na web desligada, modelos dentro da imagem e extração sem LLM externo.'},
+ ]},
+ {t:'Dados e avaliação', steps:[
+  {c:['e-fontes','d-fontes','d-coleta'], tx:'A coleta usa só fontes oficiais da lista do grupo, respeitando robots.txt e Crawl-delay.'},
+  {c:['d-coleta','d-checagens','d-indexar','v-base'], tx:'Manifestos e checagens entram na base pela carga da própria VeritAI: 590 documentos e 2.164 trechos.'},
+  {c:['d-eda'], tx:'A EDA dos conjuntos públicos, de Isabel Azar, orientou decisões: sem treino no AVeriTeC, foco em números e períodos, métricas por classe.'},
+  {c:['d-conjuntos','d-revisao'], tx:'Os conjuntos próprios foram escritos por IA e conferidos por um anotador. A validação ficou separada antes de qualquer ajuste.'},
+  {c:['d-avaliacao','v-perfis'], tx:'A avaliação mede macro-F1 e falsas aprovações por perfil. Os limiares ficaram onde estavam, num platô, e a V1 foi para o deploy.'},
+  {c:['d-assin2','d-relatorio','d-avaliacao','d-eda'], tx:'O modelo treinado no ASSIN 2 ganhou em macro-F1, mas aprovou mais afirmações erradas e ficou de fora. Tudo está no relatório técnico.'},
+ ]},
+ {t:'Do código à nuvem', steps:[
+  {c:['i-terraform','i-ec2'], tx:'O Terraform cria a VM na AWS, com firewall e IP fixo. O cloud-init instala o Docker.'},
+  {c:['i-implantar','i-ec2'], tx:'O implantar.sh envia o código e a base, gera as chaves na própria VM e sobe tudo.'},
+  {c:['i-imagens','i-compose'], tx:'As imagens são construídas na VM, com os modelos dentro e um estágio de teste.'},
+  {c:['i-compose','i-caddy','f-build'], tx:'São três contêineres. O Caddy serve o frontend e a API na mesma origem; a VeritAI não tem porta.'},
+  {c:['i-dns','i-caddy'], tx:'O DuckDNS aponta para a VM, e o Caddy emite o certificado HTTPS.'},
+  {c:['i-ci','i-pages'], tx:'O GitHub Actions roda os testes e publica o frontend no GitHub Pages.'},
+  {c:['i-nuvem'], tx:'SageMaker e Kubernetes ficaram prontos, mas não foram implantados porque geram custo.'},
+ ]},
+];
+
+const DEC = [
+ {g:'Produto',t:'Verificar antes de publicar',tx:'A verificação acontece na origem, antes de a notícia chegar ao leitor.',c:['a-estados','p-revisor']},
+ {g:'Produto',t:'Resultado por afirmação',tx:'Não existe selo de verdadeiro ou falso para a notícia inteira.',c:['f-marca','s8']},
+ {g:'Produto',t:'Humano decide',tx:'Só o revisor publica. A análise nunca publica nem bloqueia sozinha.',c:['p-revisor','a-estados']},
+ {g:'Produto',t:'A IA sugere, o publisher escolhe',tx:'O /extrair propõe frases com alertas, e nada vem marcado.',c:['v-extrair','f-publisher']},
+ {g:'Produto',t:'Imagens não passam pela IA',tx:'Anexos sem texto vão para conferência manual, e a notícia pública indica isso.',c:['a-anexos']},
+ {g:'Produto',t:'Real separado da demonstração',tx:'Os Exemplos visuais, fictícios, ficam separados das notícias publicadas.',c:['f-feed','f-proto']},
+ {g:'IA',t:'Nenhum LLM decide',tx:'NLI e regras explícitas: roda em CPU, custa pouco, a notícia não sai do contêiner e cada resultado se explica.',c:['s5','s7']},
+ {g:'IA',t:'Modelos pré-treinados, sem treino',tx:'Falta um conjunto em português com quatro classes. Um modelo treinado só entra se não aumentar as falsas aprovações.',c:['v-modelos','d-assin2']},
+ {g:'IA',t:'Insuficiente não é falso',tx:'Falta de evidência nunca vira contradição.',c:['s7','f-marca']},
+ {g:'IA',t:'Sem porcentagem até calibrar',tx:'Sem dados rotulados para calibrar, a tela mostra Não avaliável.',c:['s8','f-marca']},
+ {g:'IA',t:'Verificador que só rebaixa',tx:'Regras de entidade, período e número podem tirar uma aprovação, nunca criar.',c:['s6']},
+ {g:'IA',t:'Fontes independentes',tx:'Cópias e páginas do mesmo domínio contam como uma fonte.',c:['s3']},
+ {g:'IA',t:'Nada do futuro',tx:'Fontes publicadas depois da data da notícia ficam de fora.',c:['s2']},
+ {g:'IA',t:'Configuração versionada e rastreável',tx:'Perfis e limiares num config.json; cada relatório guarda as versões e o snapshot da base.',c:['v-perfis','v-rastro']},
+ {g:'Dados',t:'Base própria de fontes oficiais',tx:'Coleta só da lista do grupo, respeitando robots.txt. Notícias fictícias nunca entram.',c:['v-base','d-fontes','d-coleta']},
+ {g:'Dados',t:'Validação separada',tx:'A validação foi separada antes dos ajustes, e o treino do AVeriTeC rodou uma vez só, como teste intocado.',c:['d-conjuntos','d-avaliacao']},
+ {g:'Arquitetura',t:'VeritAI como serviço separado',tx:'Contrato HTTP versionado entre os dois. A API do FOMO não carrega torch.',c:['a-cliente','v-api']},
+ {g:'Arquitetura',t:'Análise assíncrona',tx:'A API responde na hora e analisa em segundo plano. Se reiniciar, a notícia vai para Erro na análise.',c:['a-cliente','f-publisher']},
+ {g:'Arquitetura',t:'SQLite e uma réplica',tx:'Simples para o MVP. PostgreSQL com pgvector fica para depois.',c:['a-db','v-base']},
+ {g:'Segurança',t:'Papéis separados por rota e chave',tx:'O leitor, sem login, vê só o público; publisher e revisor têm chaves próprias.',c:['a-auth','a-publico']},
+ {g:'Segurança',t:'VeritAI sem porta pública',tx:'Ela não tem autenticação, então só a API do FOMO a alcança.',c:['i-compose','v-api']},
+ {g:'Segurança',t:'A notícia não publicada fica em casa',tx:'Busca na web desligada no deploy, modelos dentro da imagem e extração sem LLM externo.',c:['v-url','v-modelos','v-extrair']},
+ {g:'Segurança',t:'Leitura de páginas contra SSRF',tx:'DNS resolvido uma vez e conexão só a IP público validado.',c:['v-url']},
+ {g:'Infra',t:'Mesma origem com Caddy',tx:'Frontend em / e API em /api: sem CORS e com HTTPS automático.',c:['i-caddy']},
+ {g:'Infra',t:'Infraestrutura como código e descartável',tx:'O Terraform cria e apaga a VM. O deploy é de avaliação.',c:['i-terraform','i-ec2']},
+ {g:'Infra',t:'Modelos dentro da imagem',tx:'Nenhum download ao ligar: reprodutível e offline.',c:['i-imagens','v-modelos','e-hf']},
+];
+
+const EDGE_KINDS = [
+ ['acao','Ação de uma pessoa na tela'],['http','Requisição HTTP'],['dados','Arquivo ou dados'],
+ ['build','Build, deploy ou infraestrutura'],['opcional','Opcional, desligado no deploy'],['interno','Chamada interna do código'],['hot','Destaque do fluxo atual'],
+];
+
+/* ---------- utilidades ---------- */
+const $ = s => document.querySelector(s);
+const byId = Object.fromEntries(CARDS.map(c => [c.id, c]));
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse = matchMedia('(pointer: coarse)').matches;
+const stage = $('#stage'), vp = $('#vp'), world = $('#world'), svg = $('#edges');
+const drawer = $('#drawer'), decs = $('#decs'), dock = $('#dock'), legend = $('#legend'), mini = $('#mini');
+const NS = 'http://www.w3.org/2000/svg';
+const zoneLabels = [];
+const clampK = k => Math.min(2.2, Math.max(.12, k));
+const state = {sel:null, tour:null, mini:false, touched:false};
+
+/* ---------- zonas e cards ---------- */
+for (const [id, z] of Object.entries(ZONES)) {
+  const d = document.createElement('div');
+  d.className = 'zone' + (z.dashed ? ' dashed' : '') + (z.verit ? ' verit' : '');
+  d.style.cssText = `left:${z.x}px;top:${z.y}px;width:${z.w}px;height:${z.h}px`;
+  d.innerHTML = z.repo ? `<span class="zrepo">${z.repo}</span>` : '';
+  world.insertBefore(d, svg);
+  const lb = document.createElement('div');
+  lb.className = 'zlabel' + (z.verit ? ' verit' : '');
+  lb.style.cssText = `left:${z.x + 22}px;top:${z.y - 24}px`;
+  lb.innerHTML = `<b>${z.verit ? 'Verit<span>AI</span>' : z.t}</b><small>${z.s}</small>`;
+  zoneLabels.push(lb);
+  const o = document.createElement('option'); o.value = id; o.textContent = z.t; $('#goto').appendChild(o);
+}
+const ov = document.createElement('option'); ov.value = '*'; ov.textContent = 'Visão geral'; $('#goto').insertBefore(ov, $('#goto').children[1]);
+
+function face(c) {
+  const ic = I[c.k] ? `<svg viewBox="0 0 24 24" aria-hidden="true">${I[c.k]}</svg>` : '';
+  let h;
+  if (c.k === 'etapa') {
+    h = `<span class="num" aria-hidden="true">${c.n}</span><span class="body"><span class="ttl">${c.t}</span><span class="tx">${c.tx}</span></span>`;
+  } else {
+    h = `<span class="eb">${ic}${c.eb}</span><span class="ttl">${c.t}</span>`;
+    if (c.tx) h += `<span class="tx">${c.tx}</span>`;
+    if (c.tbl) h += `<span class="tbl">${c.tbl.map(r => `<b>${r[0]}</b><span>${r[1]}</span>`).join('')}</span>`;
+    if (c.flow) h += `<span class="flow">${c.flow.map(r => `<span class="fr">${r.map(s => `<span class="st${s.endsWith('*') ? ' pub' : ''}">${s.replace('*', '')}</span>`).join('')}</span>`).join('<span class="fa" aria-hidden="true">↓</span>')}</span>`;
+    if (c.ch) h += `<span class="chips">${c.ch.map(x => `<span class="chip">${x}</span>`).join('')}</span>`;
+  }
+  return h + `<span class="farl" aria-hidden="true">${c.far || c.t}</span>`;
+}
+for (const c of CARDS) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = `card k-${c.k}`; b.dataset.id = c.id;
+  b.style.cssText = `left:${c.x}px;top:${c.y}px;width:${c.w}px`;
+  b.innerHTML = face(c);
+  b.setAttribute('aria-label', `${c.t}: ${c.eb}. Abrir detalhes.`);
+  b.addEventListener('click', () => openCard(c.id));
+  world.appendChild(b); c.el = b;
+}
+const labelLayer = document.createElement('div'); world.appendChild(labelLayer);
+for (const lb of zoneLabels) world.appendChild(lb);
+
+/* ---------- setas ---------- */
+const N = {l:[-1,0], r:[1,0], t:[0,-1], b:[0,1]};
+function measure() { for (const c of CARDS) { c.w = c.el.offsetWidth; c.h = c.el.offsetHeight; } }
+const ctr = c => [c.x + c.w / 2, c.y + c.h / 2];
+function sidesFor(e) {
+  if (typeof e.s === 'string' && typeof e.t === 'string') return [e.s, e.t];
+  const a = byId[e.a], b = byId[e.b];
+  if (b.x >= a.x + a.w) return ['r', 'l'];
+  if (b.x + b.w <= a.x) return ['l', 'r'];
+  if (b.y >= a.y + a.h) return ['b', 't'];
+  return ['t', 'b'];
+}
+function onSide(c, side, f) {
+  if (side === 'l') return [c.x, c.y + c.h * f];
+  if (side === 'r') return [c.x + c.w, c.y + c.h * f];
+  if (side === 't') return [c.x + c.w * f, c.y];
+  return [c.x + c.w * f, c.y + c.h];
+}
+function anchorSpec(c, spec) {
+  if (typeof spec === 'string') return {p: onSide(c, spec, .5), n: N[spec]};
+  const s = spec.side, p = (s === 'l' || s === 'r') ? [s === 'l' ? c.x : c.x + c.w, c.y + spec.off] : [c.x + spec.off, s === 't' ? c.y : c.y + c.h];
+  return {p, n: N[s]};
+}
+const cub = (p0, c1, c2, p3, t) => { const u = 1 - t; return [0, 1].map(i => u*u*u*p0[i] + 3*u*u*t*c1[i] + 3*u*t*t*c2[i] + t*t*t*p3[i]); };
+function rounded(pts, r = 16) {
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [a, p, b] = [pts[i - 1], pts[i], pts[i + 1]];
+    const la = Math.hypot(a[0] - p[0], a[1] - p[1]), lb = Math.hypot(b[0] - p[0], b[1] - p[1]);
+    const rr = Math.min(r, la / 2, lb / 2);
+    const q1 = [p[0] + (a[0] - p[0]) / la * rr, p[1] + (a[1] - p[1]) / la * rr];
+    const q2 = [p[0] + (b[0] - p[0]) / lb * rr, p[1] + (b[1] - p[1]) / lb * rr];
+    d += ` L${q1[0]},${q1[1]} Q${p[0]},${p[1]} ${q2[0]},${q2[1]}`;
+  }
+  const z = pts[pts.length - 1];
+  return d + ` L${z[0]},${z[1]}`;
+}
+function layoutEdges() {
+  const slots = {};
+  for (const e of EDGES) {
+    if (e.via) continue;
+    const [sa, sb] = sidesFor(e); e.sa = sa; e.sb = sb;
+    (slots[e.a + ':' + sa] ||= []).push({e, end:'a', o: ctr(byId[e.b])});
+    (slots[e.b + ':' + sb] ||= []).push({e, end:'b', o: ctr(byId[e.a])});
+  }
+  for (const [key, list] of Object.entries(slots)) {
+    const [id, side] = key.split(':'), c = byId[id], ax = (side === 'l' || side === 'r') ? 1 : 0;
+    list.sort((p, q) => p.o[ax] - q.o[ax]);
+    list.forEach((it, i) => {
+      const f = list.length === 1 ? .5 : .22 + .56 * i / (list.length - 1);
+      it.e[it.end === 'a' ? 'pa' : 'pb'] = onSide(c, side, f);
+    });
+  }
+  for (const e of EDGES) {
+    const a = byId[e.a], b = byId[e.b];
+    let d, lp;
+    if (e.via) {
+      const A = anchorSpec(a, e.s), B = anchorSpec(b, e.t);
+      const end = [B.p[0] + B.n[0] * 4, B.p[1] + B.n[1] * 4];
+      d = rounded([A.p, ...e.via, end]); lp = e.lp;
+    } else {
+      const p0 = e.pa, n0 = N[e.sa], n3 = N[e.sb];
+      const p3 = [e.pb[0] + n3[0] * 4, e.pb[1] + n3[1] * 4];
+      const dx = Math.abs(p3[0] - p0[0]), dy = Math.abs(p3[1] - p0[1]);
+      const k0 = n0[0] ? Math.max(26, dx * .5) : Math.max(26, dy * .5);
+      const k3 = n3[0] ? Math.max(26, dx * .5) : Math.max(26, dy * .5);
+      const c1 = [p0[0] + n0[0] * k0, p0[1] + n0[1] * k0], c2 = [p3[0] + n3[0] * k3, p3[1] + n3[1] * k3];
+      d = `M${p0[0]},${p0[1]} C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${p3[0]},${p3[1]}`;
+      lp = cub(p0, c1, c2, p3, e.lt ?? .5);
+    }
+    if (!e.p) {
+      e.p = document.createElementNS(NS, 'path');
+      e.p.setAttribute('class', `edge e-${e.k}`);
+      svg.appendChild(e.p);
+      if (e.l) {
+        e.lab = document.createElement('div');
+        e.lab.className = 'elabel' + (e.k === 'interno' || e.k === 'opcional' ? ' soft' : '');
+        if (e.lw) e.lab.style.setProperty('--lw', e.lw + 'px');
+        e.lab.textContent = e.l; labelLayer.appendChild(e.lab);
+      }
+    }
+    e.p.setAttribute('d', d);
+    markEdge(e, e.p.classList.contains('hot'));
+    if (e.lab) { e.lab.style.left = lp[0] + 'px'; e.lab.style.top = lp[1] + 'px'; }
+  }
+}
+function markEdge(e, hot) {
+  e.p.setAttribute('marker-end', `url(#${hot ? 'ah-hot' : (e.k === 'interno' || e.k === 'opcional') ? 'ah-muted' : 'ah-ink'})`);
+}
+
+/* ---------- destaque ---------- */
+function highlight(set, sel) {
+  for (const c of CARDS) {
+    c.el.classList.toggle('dim', !!set && !set.has(c.id));
+    c.el.classList.toggle('sel', sel === c.id);
+  }
+  for (const e of EDGES) {
+    const hot = !!set && (sel ? (e.a === sel || e.b === sel) : (set.has(e.a) && set.has(e.b)));
+    e.p.classList.toggle('hot', hot); e.p.classList.toggle('dim', !!set && !hot); markEdge(e, hot);
+    if (hot) svg.appendChild(e.p);
+    if (e.lab) { e.lab.classList.toggle('hot', hot); e.lab.classList.toggle('dim', !!set && !hot); }
+  }
+}
+const neighbors = id => [...new Set(EDGES.flatMap(e => e.a === id ? [e.b] : e.b === id ? [e.a] : []))];
+
+/* ---------- câmera ---------- */
+const cam = {x:0, y:0, k:.4};
+let anim = 0;
+function apply() {
+  world.style.transform = `translate(${cam.x}px,${cam.y}px) scale(${cam.k})`;
+  const g = 26 * cam.k;
+  vp.style.backgroundSize = `${g}px ${g}px`;
+  vp.style.backgroundPosition = `${cam.x}px ${cam.y}px`;
+  world.classList.toggle('far', cam.k < .58);
+  $('#zVal').textContent = Math.round(cam.k * 100) + '%';
+  drawMini();
+}
+function flyTo(t, ms = 560) {
+  cancelAnimationFrame(anim);
+  if (reduce || !ms) { Object.assign(cam, t); apply(); return; }
+  const s = {...cam}, t0 = performance.now();
+  const ease = u => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+  const step = now => {
+    const u = Math.min(1, (now - t0) / ms), q = ease(u);
+    cam.x = s.x + (t.x - s.x) * q; cam.y = s.y + (t.y - s.y) * q; cam.k = s.k + (t.k - s.k) * q; apply();
+    if (u < 1) anim = requestAnimationFrame(step);
+  };
+  anim = requestAnimationFrame(step);
+}
+const wide = () => stage.clientWidth > 760;
+function area() {
+  let x0 = 0, x1 = stage.clientWidth, y1 = stage.clientHeight;
+  if (!drawer.hidden) { if (wide()) x1 -= drawer.offsetWidth; else y1 -= drawer.offsetHeight; }
+  if (!decs.hidden && wide()) x0 += decs.offsetWidth;
+  if (!dock.classList.contains('mini')) y1 -= dock.offsetHeight + 24;
+  return {x:x0, y:0, w:Math.max(80, x1 - x0), h:Math.max(80, y1)};
+}
+function fitBox(b, pad = 48, kmax = 1.15) {
+  const a = area();
+  const k = clampK(Math.min(kmax, (a.w - 2 * pad) / b.w, (a.h - 2 * pad) / b.h));
+  return {k, x: a.x + (a.w - b.w * k) / 2 - b.x * k, y: a.y + (a.h - b.h * k) / 2 - b.y * k};
+}
+function boxOf(ids) {
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const id of ids) { const c = byId[id]; x0 = Math.min(x0, c.x); y0 = Math.min(y0, c.y); x1 = Math.max(x1, c.x + c.w); y1 = Math.max(y1, c.y + c.h); }
+  return {x:x0, y:y0, w:x1 - x0, h:y1 - y0};
+}
+const zoneBox = z => ({x:z.x - 10, y:z.y - 40, w:z.w + 20, h:z.h + 50});
+const overview = (ms) => flyTo(fitBox({x:20, y:70, w:W - 40, h:H - 80}, 20, 1), ms);
+function zoomAt(px, py, f) {
+  const k = clampK(cam.k * f);
+  cam.x = px - (px - cam.x) * (k / cam.k); cam.y = py - (py - cam.y) * (k / cam.k); cam.k = k; apply();
+}
+function zoomBtn(f) { const a = area(); cancelAnimationFrame(anim); zoomAt(a.x + a.w / 2, a.y + a.h / 2, f); }
+function centerOn(c) {
+  const a = area(), k = Math.min(1.1, Math.max(cam.k, .9));
+  flyTo({k, x: a.x + a.w / 2 - (c.x + c.w / 2) * k, y: a.y + a.h / 2 - (c.y + c.h / 2) * k});
+}
+
+/* ---------- interação ---------- */
+const ptrs = new Map(), drag = {moved:false, sx:0, sy:0, cx:0, cy:0, pinch:null};
+vp.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  cancelAnimationFrame(anim); poke();
+  if (ptrs.size === 1) { drag.moved = false; drag.sx = e.clientX; drag.sy = e.clientY; drag.cx = cam.x; drag.cy = cam.y; }
+  else if (ptrs.size === 2) {
+    const [p, q] = [...ptrs.values()], r = vp.getBoundingClientRect();
+    const mx = (p.x + q.x) / 2 - r.left, my = (p.y + q.y) / 2 - r.top;
+    drag.pinch = {d: Math.hypot(p.x - q.x, p.y - q.y), k: cam.k, wx: (mx - cam.x) / cam.k, wy: (my - cam.y) / cam.k};
+    drag.moved = true;
+  }
+});
+vp.addEventListener('pointermove', e => {
+  if (!ptrs.has(e.pointerId)) return;
+  if (e.pointerType === 'mouse' && !e.buttons) { up(e); return; }
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if (ptrs.size >= 2 && drag.pinch) {
+    const [p, q] = [...ptrs.values()], r = vp.getBoundingClientRect();
+    const k = clampK(drag.pinch.k * Math.hypot(p.x - q.x, p.y - q.y) / drag.pinch.d);
+    const mx = (p.x + q.x) / 2 - r.left, my = (p.y + q.y) / 2 - r.top;
+    cam.k = k; cam.x = mx - drag.pinch.wx * k; cam.y = my - drag.pinch.wy * k; apply(); return;
+  }
+  const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+  if (!drag.moved && Math.hypot(dx, dy) > 5) { drag.moved = true; try { vp.setPointerCapture(e.pointerId); } catch (_) {} vp.classList.add('grabbing'); }
+  if (drag.moved) { cam.x = drag.cx + dx; cam.y = drag.cy + dy; apply(); }
+});
+function up(e) {
+  ptrs.delete(e.pointerId);
+  if (ptrs.size < 2) drag.pinch = null;
+  if (ptrs.size === 1) { const p = [...ptrs.values()][0]; drag.sx = p.x; drag.sy = p.y; drag.cx = cam.x; drag.cy = cam.y; }
+  if (!ptrs.size) vp.classList.remove('grabbing');
+}
+vp.addEventListener('pointerup', up); vp.addEventListener('pointercancel', up);
+vp.addEventListener('click', e => {
+  if (drag.moved) { e.stopPropagation(); e.preventDefault(); drag.moved = false; return; }
+  if (!e.target.closest('.card')) clearSel();
+}, true);
+vp.addEventListener('wheel', e => {
+  e.preventDefault(); poke(); cancelAnimationFrame(anim);
+  const r = vp.getBoundingClientRect();
+  if (e.shiftKey && !e.ctrlKey) { cam.x -= (e.deltaY || e.deltaX); apply(); return; }
+  const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
+  zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-dy * (e.ctrlKey ? .01 : .0016)));
+}, {passive:false});
+
+addEventListener('keydown', e => {
+  poke();
+  if (e.target.closest && e.target.closest('select,input,textarea')) return;
+  const k = e.key;
+  if (state.tour && (k === 'ArrowRight' || k === 'PageDown')) { stepTour(1); e.preventDefault(); }
+  else if (state.tour && (k === 'ArrowLeft' || k === 'PageUp')) { stepTour(-1); e.preventDefault(); }
+  else if (k === '+' || k === '=') zoomBtn(1.25);
+  else if (k === '-' || k === '_') zoomBtn(.8);
+  else if (k === '0') overview();
+  else if (k === 'Escape') esc();
+  else if (!state.tour && k.startsWith('Arrow') && !e.target.closest('.panel,#dock')) {
+    const d = 80; cam.x += k === 'ArrowLeft' ? d : k === 'ArrowRight' ? -d : 0; cam.y += k === 'ArrowUp' ? d : k === 'ArrowDown' ? -d : 0; apply(); e.preventDefault();
+  }
+});
+function esc() {
+  if (!drawer.hidden) closeDrawer();
+  else if (!decs.hidden) toggleDecs(false);
+  else if (state.tour) endTour();
+  else clearSel();
+}
+
+/* ---------- painel de detalhes ---------- */
+const sec = (h, body) => body ? `<div class="sec"><h3>${h}</h3>${body}</div>` : '';
+const ul = (xs, cls = '') => xs && xs.length ? `<ul class="${cls}">${xs.map(x => `<li>${x}</li>`).join('')}</ul>` : '';
+function openCard(id) {
+  const c = byId[id]; if (!c) return;
+  state.sel = id;
+  if (!state.tour) highlight(new Set([id, ...neighbors(id)]), id);
+  else c.el.classList.add('sel');
+  const z = ZONES[c.z];
+  const ins = EDGES.filter(e => e.b === id), outs = EDGES.filter(e => e.a === id);
+  const lk = (e, dir) => { const o = byId[dir === '→' ? e.b : e.a]; return `<button class="lk" type="button" data-go="${o.id}"><span class="dir" aria-hidden="true">${dir}</span><span><b>${o.t}</b>${e.l ? `<small>${e.l}</small>` : ''}</span></button>`; };
+  const decsHere = DEC.filter(d => d.c.includes(id));
+  $('#drawerKind').textContent = z.t;
+  $('#drawerBody').innerHTML = `
+    <p class="d-eb">${c.eb}</p>
+    <h2 class="${c.k === 'ia' || c.k === 'etapa' ? 'v' : ''}">${c.t}</h2>
+    ${c.tx ? `<p class="lead">${c.tx}</p>` : ''}
+    ${c.tbl ? `<div class="sec"><div class="tbl">${c.tbl.map(r => `<b>${r[0]}</b><span>${r[1]}</span>`).join('')}</div></div>` : ''}
+    ${sec('Como funciona', c.faz && `<p>${c.faz}</p>`)}
+    ${(c.entra || c.sai) ? `<div class="sec io">${c.entra ? `<div><h3>Entra</h3>${ul(c.entra)}</div>` : '<div><h3>Entra</h3><ul><li>—</li></ul></div>'}${c.sai ? `<div><h3>Sai</h3>${ul(c.sai)}</div>` : '<div><h3>Sai</h3><ul><li>—</li></ul></div>'}</div>` : ''}
+    ${sec('Por que assim', ul(c.pq))}
+    ${sec('Números', ul(c.num, 'num'))}
+    ${sec('O que ficou de fora ou falta', ul(c.fora))}
+    ${(ins.length || outs.length) ? sec('Ligações no mapa', `<div class="links">${ins.map(e => lk(e, '←')).join('')}${outs.map(e => lk(e, '→')).join('')}</div>`) : ''}
+    ${decsHere.length ? sec('Decisões ligadas', `<div class="links">${decsHere.map(d => `<button class="lk" type="button" data-dec="${DEC.indexOf(d)}"><span class="dir" aria-hidden="true">◆</span><span><b>${d.t}</b><small>${d.g}</small></span></button>`).join('')}</div>`) : ''}
+    ${c.cod ? sec('No repositório', `<div class="codes">${c.cod.map(x => `<code>${x}</code>`).join('')}</div>`) : ''}`;
+  showDrawer();
+  if (!state.tour) centerOn(c);
+}
+function openDecision(i) {
+  const d = DEC[i]; state.sel = null;
+  if (!state.tour) highlight(new Set(d.c));
+  $('#drawerKind').textContent = 'Decisão';
+  $('#drawerBody').innerHTML = `
+    <p class="d-eb"><span class="tag">${d.g}</span></p>
+    <h2>${d.t}</h2><p class="lead">${d.tx}</p>
+    ${sec('Onde aparece no mapa', `<div class="links">${d.c.map(id => `<button class="lk" type="button" data-go="${id}"><span class="dir" aria-hidden="true">→</span><span><b>${byId[id].t}</b><small>${ZONES[byId[id].z].t}</small></span></button>`).join('')}</div>`)}`;
+  showDrawer();
+  if (!state.tour) flyTo(fitBox(boxOf(d.c), 70, 1));
+}
+function showDrawer() { drawer.hidden = false; drawer.scrollTop = 0; layoutOverlays(); }
+function closeDrawer() { drawer.hidden = true; layoutOverlays(); if (!state.tour) clearSel(); else for (const c of CARDS) c.el.classList.remove('sel'); }
+function clearSel() { state.sel = null; if (!state.tour) highlight(null); }
+drawer.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]'), dc = e.target.closest('[data-dec]');
+  if (g) openCard(g.dataset.go); else if (dc) openDecision(+dc.dataset.dec);
+});
+
+/* ---------- decisões ---------- */
+$('#nDecs').textContent = `(${DEC.length})`;
+const groups = [...new Set(DEC.map(d => d.g))];
+$('#decsBody').innerHTML = `<p class="lead">As escolhas que moldaram o FOMO e a VeritAI. Clique numa decisão para ver onde ela aparece.</p>` +
+  groups.map(g => `<div class="dgroup"><h3>${g}</h3>${DEC.map((d, i) => d.g === g ? `<button class="ditem" type="button" data-dec="${i}"><b>${d.t}</b><span>${d.tx}</span></button>` : '').join('')}</div>`).join('');
+$('#decsBody').addEventListener('click', e => { const b = e.target.closest('[data-dec]'); if (!b) return; if (!wide()) toggleDecs(false); openDecision(+b.dataset.dec); });
+function toggleDecs(on) { decs.hidden = !on; $('#bDecs').setAttribute('aria-pressed', String(on)); layoutOverlays(); }
+$('#bDecs').addEventListener('click', () => toggleDecs(decs.hidden));
+document.addEventListener('click', e => { const c = e.target.closest('[data-close]'); if (!c) return; if (c.dataset.close === 'drawer') closeDrawer(); else toggleDecs(false); });
+
+/* ---------- fluxos guiados ---------- */
+function renderDock() {
+  dock.classList.toggle('mini', state.mini && !state.tour);
+  if (state.tour) {
+    const t = TOURS[state.tour.t], i = state.tour.i, s = t.steps[i], last = i === t.steps.length - 1;
+    dock.innerHTML = `<div class="dh"><span class="eb">Fluxo · ${t.t}</span><span class="cnt">Passo ${i + 1} de ${t.steps.length}</span></div>
+      <p class="cap">${s.tx}</p>
+      <div class="ctl"><button class="btn" type="button" data-t="prev" ${i === 0 ? 'disabled' : ''}>← Anterior</button>
+      <span class="dots" aria-hidden="true">${t.steps.map((_, j) => `<i class="${j === i ? 'on' : ''}"></i>`).join('')}</span>
+      <button class="btn primary" type="button" data-t="next">${last ? 'Concluir' : 'Próximo →'}</button>
+      <button class="btn link" type="button" data-t="end">Sair do fluxo</button></div>`;
+  } else if (state.mini) {
+    dock.innerHTML = `<button class="btn primary" type="button" data-t="open">Fluxos guiados</button>`;
+  } else {
+    dock.innerHTML = `<div class="dh"><b>Percorra um fluxo</b><button class="btn link" type="button" data-t="hide">Esconder</button></div>
+      <div class="tours">${TOURS.map((t, i) => `<button type="button" data-tour="${i}"><span>${t.t}</span><small>${t.steps.length} passos</small></button>`).join('')}</div>`;
+  }
+  layoutOverlays();
+}
+dock.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.tour) startTour(+b.dataset.tour);
+  else if (b.dataset.t === 'prev') stepTour(-1);
+  else if (b.dataset.t === 'next') stepTour(1);
+  else if (b.dataset.t === 'end') endTour();
+  else if (b.dataset.t === 'hide') { state.mini = true; renderDock(); }
+  else if (b.dataset.t === 'open') { state.mini = false; renderDock(); }
+});
+function startTour(t) { state.tour = {t, i:0}; drawer.hidden = true; renderDock(); goStep(); }
+function goStep(ms) {
+  const s = TOURS[state.tour.t].steps[state.tour.i];
+  highlight(new Set(s.c));
+  renderDock();
+  flyTo(fitBox(boxOf(s.c), 64, 1.1), ms);
+}
+function stepTour(d) {
+  const t = TOURS[state.tour.t], i = state.tour.i + d;
+  if (i >= t.steps.length) { endTour(); return; }
+  if (i < 0) return;
+  state.tour.i = i; goStep();
+}
+function endTour() { state.tour = null; highlight(null); drawer.hidden = true; renderDock(); overview(); }
+
+/* ---------- legenda ---------- */
+$('#lgEdges').innerHTML = EDGE_KINDS.map(([k, t]) => `<svg viewBox="0 0 44 12" aria-hidden="true"><path class="edge ${k === 'hot' ? 'hot' : 'e-' + k}" d="M2,6 L36,6" marker-end="url(#${k === 'hot' ? 'ah-hot' : (k === 'interno' || k === 'opcional') ? 'ah-muted' : 'ah-ink'})"/></svg><span>${t}</span>`).join('');
+function toggleLegend(on) { legend.hidden = !on; $('#bLeg').setAttribute('aria-pressed', String(on)); }
+$('#bLeg').addEventListener('click', () => toggleLegend(legend.hidden));
+
+/* ---------- minimapa ---------- */
+const M = 220 / W;
+for (const z of Object.values(ZONES)) { const d = document.createElement('div'); d.className = 'mz'; d.style.cssText = `left:${z.x * M}px;top:${z.y * M}px;width:${z.w * M}px;height:${z.h * M}px`; mini.appendChild(d); }
+const mv = document.createElement('div'); mv.className = 'mv'; mini.appendChild(mv);
+function drawMini() {
+  const x = -cam.x / cam.k, y = -cam.y / cam.k, w = stage.clientWidth / cam.k, h = stage.clientHeight / cam.k;
+  mv.style.cssText = `left:${x * M}px;top:${y * M}px;width:${w * M}px;height:${h * M}px`;
+}
+function miniGo(e) {
+  const r = mini.getBoundingClientRect(), wx = (e.clientX - r.left) / M, wy = (e.clientY - r.top) / M, a = area();
+  cam.x = a.x + a.w / 2 - wx * cam.k; cam.y = a.y + a.h / 2 - wy * cam.k; apply();
+}
+mini.addEventListener('pointerdown', e => { cancelAnimationFrame(anim); poke(); miniGo(e); try { mini.setPointerCapture(e.pointerId); } catch (_) {} });
+mini.addEventListener('pointermove', e => { if (e.buttons) miniGo(e); });
+mini.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); overview(); } });
+
+/* ---------- barra ---------- */
+$('#zIn').addEventListener('click', () => zoomBtn(1.25));
+$('#zOut').addEventListener('click', () => zoomBtn(.8));
+$('#bFit').addEventListener('click', () => overview());
+$('#goto').addEventListener('change', e => {
+  const v = e.target.value; e.target.value = '';
+  if (v === '*') overview(); else if (v) flyTo(fitBox(zoneBox(ZONES[v]), 30, 1.1));
+});
+const full = $('#bFull');
+if (document.fullscreenEnabled) {
+  full.hidden = false;
+  full.addEventListener('click', () => {
+    const p = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    if (p && p.catch) p.catch(() => {});
+  });
+  document.addEventListener('fullscreenchange', () => { full.textContent = document.fullscreenElement ? 'Sair da tela cheia' : 'Tela cheia'; });
+}
+if (coarse) $('#hint').textContent = 'Arraste com um dedo · use a pinça para aproximar · toque num card';
+
+function layoutOverlays() {
+  let x0 = 0, x1 = stage.clientWidth;
+  if (wide()) { if (!drawer.hidden) x1 -= drawer.offsetWidth; if (!decs.hidden) x0 += decs.offsetWidth; }
+  dock.style.setProperty('--dx', `${(x0 + x1) / 2}px`);
+  dock.style.setProperty('--aw', `${x1 - x0}px`);
+}
+
+/* ---------- inatividade: volta à visão geral ---------- */
+let idle = 0;
+function poke() { clearTimeout(idle); idle = setTimeout(resetAll, 240000); }
+['pointerdown', 'wheel', 'keydown'].forEach(t => addEventListener(t, () => { state.touched = true; }, {passive:true, capture:true}));
+function resetAll() { state.tour = null; state.mini = false; drawer.hidden = true; toggleDecs(false); highlight(null); renderDock(); overview(); }
+['pointerdown', 'wheel'].forEach(t => addEventListener(t, poke, {passive:true}));
+
+/* ---------- início ---------- */
+let ready = false;
+function relayout() { measure(); layoutEdges(); }
+function init() {
+  toggleLegend(stage.clientWidth >= 1100);
+  relayout(); renderDock(); overview(0); poke(); ready = true;
+}
+addEventListener('resize', () => {
+  if (!ready) return; layoutOverlays();
+  if (state.tour) goStep(0); else apply();
+});
+init();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { relayout(); if (!state.touched) overview(0); });
+})();
+</script>
+
+</html>

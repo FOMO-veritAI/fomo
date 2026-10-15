@@ -56,6 +56,7 @@ O workflow `.github/workflows/pages.yml` publica só o frontend em `https://fomo
 - Endereço da API: variável do repositório `FOMO_API_URL` (Settings → Secrets and variables → Actions → Variables). Sem ela, o build usa `http://127.0.0.1:8000`, e a página publicada só mostra notícias publicadas para quem roda a API na própria máquina. Os **Exemplos visuais** aparecem sempre.
 - CORS: a API só aceita as origens locais. Para aceitar a página publicada, inicie a API com `FOMO_CORS_ORIGINS=https://fomo-veritai.github.io` (várias origens separadas por vírgula).
 - Uma página HTTPS chamando `http://127.0.0.1:8000` pode exigir que o navegador permita acesso à rede local. Uma API pública precisa de HTTPS.
+- Mapa da arquitetura: `public/arquitetura.html` é um mapa navegável do FOMO e da VeritAI (componentes, setas com o que passa entre eles, fluxos guiados e decisões), num HTML só, sem dependências. O build o copia para `dist/`, então ele fica em `https://fomo-veritai.github.io/fomo/arquitetura.html` e, no deploy com Caddy, em `/arquitetura.html`.
 
 ## Deploy
 
